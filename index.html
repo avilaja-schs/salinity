@@ -1,0 +1,2044 @@
+<title>Salinity Scale-Up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Be+Vietnam+Pro:wght@400;600;800&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: a lab bench. Status bar on top; the drawing "stage" with its build
+   controls is the hero on the left; the question/answer card sits on the right
+   (stacks on phones). */
+:root{
+  --bg:#e9f1f2;        /* sea-mist page */
+  --surface:#fbfdfd;   /* lab card */
+  --ink:#10303b;       /* deep tide text */
+  --muted:#4f6a74;
+  --line:#c3d5d9;
+  --glass:#5b7781;     /* beaker outline */
+  --water:#8fd0df;
+  --grain:#ffffff;     /* dissolved salt dots */
+  --grain-edge:#2f6f80;
+  --salt:#f3efe3; --salt-edge:#a59c84;
+  --accent:#0c6f73;    /* sea-glass teal */
+  --accent-ink:#ffffff;
+  --accent-soft:#d3ecec;
+  --good:#1d7f47; --warn:#a86b12; --bad:#b33a34;
+  --eqred:#c2362a;      /* matches the red ink on the class worksheet */
+  --dye-red:#e0574b; --dye-yellow:#f2c53d; --dye-green:#46ad6d; --dye-blue:#4a84d8; --dye-ink:#10232b;
+  --f-display:"Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", Verdana, system-ui, sans-serif;
+  --f-num:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0a1a20; --surface:#11262e; --ink:#e2eef1; --muted:#97b2bb; --line:#24434e;
+  --glass:#a9c6cf; --water:#1f6d82; --grain:#ffffff; --grain-edge:#0d3d4a;
+  --salt:#e7e1cf; --salt-edge:#8e8670;
+  --accent:#4cc2be; --accent-ink:#06282b; --accent-soft:#163d42;
+  --good:#5fd08f; --warn:#e6b25a; --bad:#f08077; --eqred:#ff8f80;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a1a20; --surface:#11262e; --ink:#e2eef1; --muted:#97b2bb; --line:#24434e;
+  --glass:#a9c6cf; --water:#1f6d82; --grain:#ffffff; --grain-edge:#0d3d4a;
+  --salt:#e7e1cf; --salt-edge:#8e8670;
+  --accent:#4cc2be; --accent-ink:#06282b; --accent-soft:#163d42;
+  --good:#5fd08f; --warn:#e6b25a; --bad:#f08077; --eqred:#ff8f80;
+  color-scheme:dark}
+/* Vietnamese needs a font with full diacritic support */
+:root:lang(vi){--f-display:"Be Vietnam Pro", system-ui, sans-serif; --f-body:"Be Vietnam Pro", system-ui, sans-serif}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5;padding-inline:16px;padding-block:12px 40px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(1.6rem,4vw,2.3rem);margin:0;letter-spacing:-.01em;text-wrap:balance}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* ---- top bar ---- */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px}
+.brand{display:flex;flex-direction:column;gap:2px;min-width:0}
+.tag{color:var(--muted);font-size:.95rem}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg{display:inline-flex;flex-wrap:wrap;border:1.5px solid var(--line);border-radius:18px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:6px 14px;font-weight:700}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.btn{border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 14px;font-weight:700;display:inline-flex;gap:6px;align-items:center}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.build{border-color:var(--accent);color:var(--accent);font-size:1.02rem;padding:10px 16px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn svg{width:18px;height:18px;flex:none}
+
+.stats{display:flex;flex-wrap:wrap;gap:8px}
+.stat{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:6px 12px;display:flex;flex-direction:column;min-width:84px}
+.stat b{font-family:var(--f-num);font-size:1.3rem;line-height:1.1}
+.stat span{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.stat.timer b{color:var(--warn)}
+.stat.pop b{animation:pop .5s}
+@keyframes pop{40%{transform:scale(1.3)}}
+
+/* ---- main grid ---- */
+.grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+
+.problem{font-family:var(--f-display);font-weight:600;font-size:clamp(1.2rem,3vw,1.55rem);line-height:1.3;margin:0;text-wrap:balance}
+.problem .num{background:var(--accent-soft);padding:0 .3em;border-radius:6px;font-weight:600}
+.phase{display:flex;gap:6px;flex-wrap:wrap}
+.phase span{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:3px 10px;border:1.5px solid var(--line);color:var(--muted)}
+.phase span.on{border-color:var(--accent);color:var(--accent)}
+.stage svg{width:100%;height:auto;display:block}
+.readout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ro{border:1.5px dashed var(--line);border-radius:12px;padding:6px 10px;min-width:0}
+.ro span{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.ro b{font-family:var(--f-num);font-size:1.15rem}
+
+/* build panel */
+.buildbox{border:2px solid var(--accent);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;background:color-mix(in srgb,var(--accent-soft) 45%,var(--surface))}
+.buildbox p{margin:0}
+.bmsg{font-weight:700;min-height:1.5em}
+.bmsg.bad{color:var(--bad)} .bmsg.good{color:var(--good)}
+
+/* svg parts */
+.glass{fill:none;stroke:var(--glass);stroke-width:3;stroke-linejoin:round;transition:stroke .2s}
+.oops .glass{stroke:var(--bad)}
+.oops{animation:shake .45s}
+@keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.water{fill:var(--water)}
+.layer{stroke:var(--grain-edge);stroke-width:1.5;stroke-dasharray:6 5}
+.grain{fill:var(--grain);stroke:var(--grain-edge);stroke-width:.6}
+.tick{stroke:var(--glass);stroke-width:1.5}
+.lbl{fill:var(--muted);font-family:var(--f-num);font-size:12px}
+.lbl-big{fill:var(--ink);font-family:var(--f-num);font-size:16px;font-weight:600}
+.lbl-copy{fill:var(--ink);font-family:var(--f-num);font-size:12px;font-weight:600}
+/* copy / portion labels inside the water (×1, ×2, +0.5, 1000): dark text on a solid pill */
+.pill{fill:var(--surface);stroke:var(--ink);stroke-width:1.5}
+.pill-txt{fill:var(--ink);font-family:var(--f-num);font-size:15px;font-weight:700;text-anchor:middle}
+.pile{fill:var(--salt);stroke:var(--salt-edge);stroke-width:1.5}
+.dish{fill:none;stroke:var(--glass);stroke-width:2.5}
+.divider{stroke:var(--ink);stroke-width:3}
+.stream{fill:none;stroke:var(--water);stroke-width:7;stroke-linecap:round}
+.cup{fill:none;stroke:var(--glass);stroke-width:2.5;stroke-linejoin:round}
+.slotglass{fill:none;stroke:var(--glass);stroke-width:2}
+.knife{stroke:var(--bad);stroke-width:3;stroke-dasharray:6 4}
+.block{fill:var(--water);stroke:var(--grain-edge);stroke-width:1.5}
+.seg.small button{padding:4px 12px;font-size:.88rem}
+.stackgrid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:860px){.stackgrid{grid-template-columns:minmax(0,1fr)}}
+.srcgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:480px){.srcgrid{grid-template-columns:minmax(0,1fr)}}
+.src{display:flex;gap:12px;align-items:center;text-align:left;border:2px solid var(--line);border-radius:14px;background:var(--surface);padding:10px 12px;min-width:0}
+.src:not(:disabled):hover{border-color:var(--accent)}
+.src svg{width:44px;height:56px;flex:none}
+.src b{display:block;font-size:1.05rem}
+.src .num{font-size:.98rem}
+.src:disabled{opacity:.55;cursor:default}
+.colcard svg{width:100%;max-height:70vh;display:block}
+.eqs{display:flex;flex-wrap:wrap;gap:10px}
+.eq{border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;display:flex;flex-direction:column;gap:2px;background:var(--surface);min-width:0;transition:opacity .2s}
+.eq.on{border-color:var(--accent);border-width:2px}
+.eq.off{opacity:.45}
+.eqs.nocap .eq-cap{display:none}
+.eq-cap{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.eq-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-weight:700;font-size:1.02rem}
+.eq-blank{display:inline-block;width:2.2em;border-bottom:2px solid currentColor;height:1.1em}
+.paren{display:inline-flex;align-items:center;padding:0 10px;position:relative}
+.paren::before,.paren::after{content:"";position:absolute;top:0;bottom:0;width:7px;border:2px solid var(--ink);border-radius:50%/50%}
+.paren::before{left:0;border-right:0;border-top-right-radius:0;border-bottom-right-radius:0}
+.paren::after{right:0;border-left:0;border-top-left-radius:0;border-bottom-left-radius:0}
+.frac{display:inline-flex;flex-direction:column;align-items:center;text-align:center;font-size:.9rem;line-height:1.25;padding:2px 4px}
+.frac .top{padding:0 4px 3px}
+.frac .bot{border-top:2px solid var(--ink);padding:3px 4px 0}
+.frac .red{color:var(--eqred)}
+.wordnote{margin:0;border:2px dashed var(--line);border-radius:12px;padding:14px;color:var(--muted);font-weight:700;text-align:center}
+.calcbox{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.calcbox > .btn{align-self:flex-start}
+.calc-keys button.use{grid-column:span 4;font-family:var(--f-body);font-size:1rem;color:var(--accent);border-color:var(--accent)}
+.calc{border:1.5px solid var(--line);border-radius:14px;padding:10px;width:100%;max-width:300px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.calc-screen{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:6px 10px;text-align:right;min-width:0}
+.calc-expr{color:var(--muted);font-size:.85rem;min-height:1.3em;overflow-x:auto;white-space:nowrap}
+.calc-val{font-size:1.6rem;font-weight:600;overflow-x:auto;white-space:nowrap}
+.calc-keys{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.calc-keys button{border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 0;font-family:var(--f-num);font-size:1.2rem;font-weight:600}
+.calc-keys button.op{color:var(--accent);border-color:var(--accent)}
+.calc-keys button.wide{grid-column:span 2}
+.calc-keys button.eq{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.calc-keys button:active{transform:translateY(1px)}
+.layer-lbl{paint-order:stroke;stroke:#ffffffd9;stroke-width:5px;stroke-linejoin:round;fill:var(--dye-ink);font-family:var(--f-num);font-size:15px;font-weight:600;text-anchor:middle}
+.hi{fill:none;stroke:var(--accent);stroke-width:4;stroke-dasharray:10 6}
+.hi-lbl{fill:var(--accent);font-family:var(--f-num);font-size:15px;font-weight:600}
+
+/* answer side */
+label{font-weight:700}
+.q{margin:0;font-size:1.05rem;font-weight:700}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.inp{border:2px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 12px;width:9em;font-family:var(--f-num);font-size:1.2rem}
+select.unitsel{font-family:var(--f-num);font-size:1.1rem;font-weight:600;padding:8px 10px}
+select.inp{font-family:var(--f-body);font-size:1rem;width:auto}
+.unit{color:var(--muted);font-weight:700}
+.hint{background:var(--accent-soft);border-radius:12px;padding:10px 12px;margin:0}
+.frame{font-family:var(--f-num);font-size:1.05rem;display:block;margin-top:4px}
+.result{border-radius:12px;padding:12px;border:2px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.result.good{border-color:var(--good)} .result.close{border-color:var(--warn)} .result.bad{border-color:var(--bad)}
+.verdict{font-family:var(--f-display);font-weight:800;font-size:1.4rem;margin:0}
+.result.good .verdict{color:var(--good)} .result.close .verdict{color:var(--warn)} .result.bad .verdict{color:var(--bad)}
+.steps{margin:0;padding-left:1.3em;font-variant-numeric:tabular-nums;font-size:1rem}
+.warnbox{border-left:4px solid var(--warn);padding:6px 10px;margin:0;font-size:.95rem}
+.msg{color:var(--bad);font-weight:700;margin:0;min-height:1.5em}
+.waitnote{color:var(--muted);margin:0;font-size:.95rem}
+
+details{font-size:.92rem;color:var(--muted)}
+details summary{cursor:pointer;font-weight:700;color:var(--ink)}
+details li{margin-block:4px}
+.overlay{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 80%,transparent);display:grid;place-items:center;padding:16px;z-index:5}
+.overlay .card{max-width:420px;text-align:center;align-items:center}
+.big{font-family:var(--f-display);font-weight:800;font-size:3rem;margin:0}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1 data-t="title">Salinity Scale-Up</h1>
+      <div class="tag" data-t="tagline">Draw the problem. Scale it. Find the answer.</div>
+    </div>
+    <div class="tools">
+      <div class="seg" role="group" aria-label="Mode">
+        <button id="mPractice" aria-pressed="true" data-t="practice">Practice</button>
+        <button id="mTimed" aria-pressed="false" data-t="timed">Timed test</button>
+        <button id="mStack" aria-pressed="false" data-t="stackMode">Layer stack</button>
+      </div>
+      <div class="seg" role="group" aria-label="Language">
+        <button id="lEn" aria-pressed="true" lang="en">English</button>
+        <button id="lEs" aria-pressed="false" lang="es">Español</button>
+        <button id="lVi" aria-pressed="false" lang="vi">Tiếng Việt</button>
+      </div>
+      <button class="btn" id="readBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg>
+        <span data-t="read">Read aloud</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="row" style="justify-content:space-between">
+    <div class="row">
+    <div class="seg" role="group" aria-label="Problem type" id="typeSeg">
+      <button id="tConc" aria-pressed="true" data-t="typeConc">Find the salinity</button>
+      <button id="tSalt" aria-pressed="false" data-t="typeSalt">Find the salt</button>
+      <button id="tMix" aria-pressed="false" data-t="typeMix">Mix</button>
+    </div>
+    <div class="seg" role="group" aria-label="Picture or word problem" id="viewSeg">
+      <button id="vPic" aria-pressed="true" data-t="viewPic">Picture</button>
+      <button id="vWord" aria-pressed="false" data-t="viewWord">Word problem</button>
+      <button id="vMix" aria-pressed="false" data-t="viewMix">Mixed</button>
+    </div>
+    </div>
+    <div class="stats" aria-live="polite">
+      <div class="stat" id="stScore"><span data-t="score">Score</span><b id="score">0</b></div>
+      <div class="stat"><span data-t="streak">Streak</span><b id="streak">0</b></div>
+      <div class="stat"><span data-t="level">Level</span><b id="level">1</b></div>
+      <div class="stat"><span data-t="best">Best</span><b id="best">0</b></div>
+      <div class="stat timer" id="timerBox" hidden><span data-t="time">Time</span><b id="timer">90</b></div>
+    </div>
+  </div>
+
+  <main class="grid" id="mainGrid">
+    <!-- LEFT: the problem, the drawing, and the build controls -->
+    <section class="card" aria-labelledby="probText">
+      <p class="problem" id="probText"></p>
+      <p class="wordnote" id="wordNote" hidden data-t="wordNote">Word problem: no picture yet. The picture appears after you check your answer.</p>
+      <div class="row" style="justify-content:space-between" id="phaseRow">
+        <div class="phase"><span id="ph1" data-t="ph1">1 · As written</span><span id="ph2" data-t="ph2">2 · Scale it</span></div>
+        <div class="seg small" role="group" aria-label="Animation" id="animSeg">
+          <button id="aPour" aria-pressed="true" data-t="animPour">Pour &amp; split</button>
+          <button id="aBlocks" aria-pressed="false" data-t="animBlocks">Blocks</button>
+        </div>
+      </div>
+      <div class="stage" id="stageWrap"><svg id="stage" viewBox="0 0 720 360" role="img" aria-labelledby="stageDesc"><desc id="stageDesc"></desc></svg></div>
+
+      <!-- Practice only: students do the scaling themselves -->
+      <div class="buildbox" id="buildBox" hidden>
+        <p id="buildTip"></p>
+        <div class="row">
+          <button class="btn build" id="bAdd" type="button"></button>
+          <button class="btn build" id="bTop" type="button" data-t="topOff">Top it off</button>
+          <button class="btn build" id="bCut" type="button"></button>
+          <button class="btn" id="bUndo" type="button" data-t="undo">Undo</button>
+        </div>
+        <p class="bmsg" id="bMsg" aria-live="polite"></p>
+      </div>
+
+      <div class="readout" aria-live="polite">
+        <div class="ro"><span data-t="water">Water</span><b id="roWater">–</b></div>
+        <div class="ro"><span id="roKLabel">Copies</span><b id="roK">–</b></div>
+        <div class="ro"><span data-t="salt">Salt</span><b id="roSalt">–</b></div>
+      </div>
+      <details id="ownDetails">
+        <summary data-t="ownTitle">Use my own numbers</summary>
+        <form id="ownForm" class="row" style="margin-top:10px" novalidate>
+          <label for="ownKind" class="sr" data-t="typeLabel">Problem type</label>
+          <select class="inp" id="ownKind">
+            <option value="conc" data-t="typeConc">Find the salinity</option>
+            <option value="salt" data-t="typeSalt">Find the salt</option>
+          </select>
+          <label for="ownA" class="sr" id="ownALabel">Salt (g)</label>
+          <input class="inp" id="ownA" type="number" step="any" inputmode="decimal">
+          <span class="unit" id="ownAUnit">g</span>
+          <label for="ownV" class="sr" data-t="vLabel">Water (mL)</label>
+          <input class="inp" id="ownV" type="number" step="any" min="10" max="10000" inputmode="decimal" placeholder="mL">
+          <span class="unit">mL</span>
+          <button class="btn" type="submit" data-t="useMine">Draw it</button>
+        </form>
+        <p class="msg" id="ownMsg"></p>
+      </details>
+    </section>
+
+    <!-- RIGHT: question, answer, results -->
+    <section class="card" aria-live="polite">
+      <div id="eqSlotMain">
+      <!-- The two class equations (right side only, as written on the worksheet).
+           One shared box; setMode() moves it. The one that fits the current problem is highlighted. -->
+      <div class="eqs" id="eqBox">
+        <div class="eq" id="eqConc">
+          <span class="eq-cap" data-t="typeConc">Find the salinity</span>
+          <div class="eq-row">
+            <span class="eq-blank" aria-hidden="true"></span><span data-t="eqGSalt">g of salt</span>
+            <span class="paren">
+              <span class="frac"><span class="top" data-t="eq1000">1000 mL H₂O</span><span class="bot red" data-t="eqSaltIn"># of mL H₂O the salt is in</span></span>
+            </span>
+          </div>
+        </div>
+        <div class="eq" id="eqSalt">
+          <span class="eq-cap" data-t="typeSalt">Find the salt</span>
+          <div class="eq-row">
+            <span data-t="eqSalinity">Salinity</span>
+            <span class="paren">
+              <span class="frac"><span class="top red" data-t="eqYouHave"># of mL of H₂O you have</span><span class="bot" data-t="eq1000">1000 mL H₂O</span></span>
+            </span>
+          </div>
+        </div>
+      </div>
+      </div>
+      <p class="q" id="question"></p>
+      <p class="waitnote" id="waitNote" hidden></p>
+      <form id="predForm" class="row" novalidate>
+        <label for="pred" class="sr" data-t="predLabel">Your answer</label>
+        <input class="inp" id="pred" type="number" step="any" inputmode="decimal" autocomplete="off">
+        <span class="unit" id="predUnit"></span>
+        <!-- Timed test only: students must pick the unit themselves -->
+        <label for="predUnitSel" class="sr" data-t="unitLabel">Unit</label>
+        <select class="inp unitsel" id="predUnitSel" hidden>
+          <option value="" data-t="unitPick">unit?</option>
+          <option value="ppt">ppt</option>
+          <option value="g">g</option>
+        </select>
+        <button class="btn primary" id="checkBtn" type="submit" data-t="check">Check</button>
+      </form>
+      <p class="msg" id="predMsg"></p>
+      <div id="calcSlotMain">
+      <!-- ONE shared calculator. setMode() moves it into whichever screen is showing. -->
+      <div class="calcbox" id="calcBox">
+          <button class="btn" id="calcToggle" type="button" aria-expanded="true" aria-controls="calc">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h.01M16 19h.01"/></svg>
+          <span data-t="calcName">Calculator</span>
+        </button>
+      <!-- Calculator: tap the keys or type on the keyboard (Enter = equals) -->
+        <div class="calc" id="calc" tabindex="-1">
+          <div class="calc-screen" aria-live="polite">
+            <div class="calc-expr num" id="calcExpr">&nbsp;</div>
+            <div class="calc-val num" id="calcVal">0</div>
+          </div>
+          <div class="calc-keys" id="calcKeys">
+            <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button><button type="button" class="op" data-k="÷" data-a="divide">÷</button>
+            <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button><button type="button" class="op" data-k="×" data-a="times">×</button>
+            <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button><button type="button" class="op" data-k="−" data-a="minus">−</button>
+            <button type="button" data-k="0">0</button><button type="button" data-k=".">.</button><button type="button" data-k="back" data-a="del">⌫</button><button type="button" class="op" data-k="+" data-a="plus">+</button>
+            <button type="button" class="wide" data-k="clear" data-a="clear">C</button><button type="button" class="wide eq" data-k="=" data-a="equals">=</button>
+            <button type="button" class="use" id="calcUse" data-k="use" data-t="calcUse">Put in answer box</button>
+          </div>
+        </div>
+      </div>
+      </div>
+      <div class="row">
+        <button class="btn" id="hintBtn" type="button" data-t="hint">Hint</button>
+        <button class="btn" id="showBtn" type="button" data-t="showMe">Show me</button>
+        <button class="btn" id="newBtn" type="button" data-t="newP">New problem</button>
+      </div>
+      <p class="hint" id="hintBox" hidden></p>
+      <div class="result" id="result" hidden>
+        <p class="verdict" id="verdict"></p>
+        <div id="answerLine" class="num" style="font-size:1.1rem"></div>
+        <ol class="steps" id="steps"></ol>
+        <p id="youSaid" style="margin:0"></p>
+        <p class="warnbox" id="satNote" hidden></p>
+        <button class="btn primary" id="nextBtn" type="button" data-t="next">Next problem</button>
+      </div>
+      <details>
+        <summary data-t="aboutTitle">About the numbers</summary>
+        <ul id="aboutList"></ul>
+      </details>
+    </section>
+  </main>
+
+  <!-- LAYER STACK: which order do four salt solutions stack in? -->
+  <section class="stackgrid" id="stackView" hidden>
+    <div class="card">
+      <p class="problem" data-t="stackTitle">Stack the layers</p>
+      <p id="stackIntro" style="margin:0"></p>
+      <p class="problem" id="stackStory" hidden style="font-size:1.1rem"></p>
+      <div id="eqSlotStack"></div>
+      <div class="srcgrid" id="stackSources"></div>
+      <div class="row">
+        <button class="btn" id="stUndo" type="button" data-t="undo">Undo</button>
+        <button class="btn primary" id="stSettle" type="button" data-t="settle">Let it settle</button>
+        <button class="btn" id="stHint" type="button" data-t="hint">Hint</button>
+        <button class="btn" id="stNew" type="button" data-t="newSet">New set</button>
+      </div>
+      <div id="calcSlotStack"></div>
+      <p class="hint" id="stHintBox" hidden></p>
+      <p class="bmsg" id="stMsg" aria-live="polite"></p>
+      <div class="result" id="stResult" hidden aria-live="polite">
+        <p class="verdict" id="stVerdict"></p>
+        <ul class="steps" id="stSinks"></ul>
+        <ol class="steps" id="stCalc"></ol>
+        <p class="waitnote" id="stNote"></p>
+        <button class="btn primary" id="stNext" type="button" data-t="newSet">New set</button>
+      </div>
+    </div>
+    <div class="card colcard">
+      <svg id="stackCol" viewBox="0 0 240 430" role="img" aria-label="Column"></svg>
+    </div>
+  </section>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="ovTitle">
+    <h2 id="ovTitle" class="problem" data-t="timeUp">Time's up!</h2>
+    <p class="big num" id="ovScore">0</p>
+    <p id="ovText"></p>
+    <button class="btn primary" id="ovAgain" type="button" data-t="again">Play again</button>
+    <button class="btn" id="ovPractice" type="button" data-t="backPractice">Back to practice</button>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   Salinity Scale-Up
+   Two problem types:
+     • Find the salinity: "__ g of salt in __ mL"  → grams per 1000 mL
+     • Find the salt:     "__ g per 1000 mL, you have __ mL" → grams of salt
+   Every problem is drawn exactly as written, then scaled. The scaling is one
+   of two moves, depending on the numbers:
+     • FILL  — pour in copies until the container is full
+               (salinity with < 1000 mL, or salt with > 1000 mL)
+     • CUT   — cut the water into equal portions
+               (salinity with > 1000 mL, or salt with < 1000 mL)
+   Practice: students press the buttons to fill or cut, then answer.
+   Timed test: no building; students answer first, then watch it play.
+   One white dot = a fixed amount of salt for the whole problem, so the
+   dots look equally crowded everywhere (same concentration).
+   ===================================================================== */
+
+// ---------- Text: English, Spanish, Vietnamese ----------
+// Every function gets numbers that are already formatted as strings.
+const T = {
+  en:{
+    title:"Salinity Scale-Up", tagline:"Draw the problem. Scale it. Find the answer.",
+    practice:"Practice", timed:"Timed test", read:"Read aloud",
+    score:"Score", streak:"Streak", level:"Level", best:"Best", time:"Time",
+    ph1:"1 · As written", ph2:"2 · Scale it",
+    water:"Water", salt:"Salt", copies:"Copies", portions:"Portions",
+    typeConc:"Find the salinity", typeSalt:"Find the salt", typeMix:"Mix", typeLabel:"Problem type",
+    ownTitle:"Use my own numbers", gLabel:"Salt (g)", cLabel:"Salinity (ppt)", vLabel:"Water (mL)", useMine:"Draw it",
+    perL:"ppt", gUnit:"g", predLabel:"Your answer",
+    check:"Check", hint:"Hint", showMe:"Show me", newP:"New problem", next:"Next problem",
+    aboutTitle:"About the numbers", timeUp:"Time's up!", again:"Play again", backPractice:"Back to practice",
+    topOff:"Top it off", undo:"Undo", animPour:"Pour & split", animBlocks:"Blocks",
+    problemConc:(g,v)=>`<span class="num">${g} g</span> of salt is added to <span class="num">${v} mL</span> of water.`,
+    problemSalt:(c,v)=>`This water has a salinity of <span class="num">${c} ppt</span> (${c} g of salt in every 1000 mL). You have <span class="num">${v} mL</span> of it.`,
+    sayConc:(g,v)=>`${g} grams of salt is added to ${v} milliliters of water. What is the salinity in parts per thousand?`,
+    saySalt:(c,v)=>`This water has a salinity of ${c} parts per thousand. That is ${c} grams of salt in every 1000 milliliters. How many grams of salt are in ${v} milliliters?`,
+    qTimed:"Read the problem. Decide what you need to find, solve it, and pick the unit.",
+    qConc:()=>"What is the salinity of this water in ppt? (ppt = grams of salt in 1000 mL)",
+    qSalt:(v)=>`How many grams of salt are in ${v} mL of this water?`,
+    tipFill:(target,u,s)=>`Add copies until the container holds ${target} mL. Each copy is ${u} mL with ${s} g of salt.`,
+    tipCut:(u)=>`Cut the water into ${u} mL portions. The salt is shared equally between the portions.`,
+    add:(u)=>`+ Add a copy (${u} mL)`, cut:(u)=>`Cut off ${u} mL`,
+    overflow:(r)=>`Too much! There is only room for ${r} mL more. Use "Top it off" to add part of a copy.`,
+    roomLeft:"There is still room for a whole copy. Add a copy first.",
+    topped:(f)=>`The last copy is only part of a copy: ${f} of a copy.`,
+    lastPiece:(r,f)=>`No full portion is left. The last piece is ${r} mL, which is ${f} of a portion.`,
+    built:"Built! Now answer the question.", nothing:"It is already 1000 mL, so there is nothing to build. Answer the question.",
+    buildFirst:"Build it first (use the buttons under the picture), then answer. Or press Show me.",
+    timedNote:"Answer first. Then watch it scale.",
+    hintConcSmall:(v,f)=>`${v} mL is less than 1000 mL. It takes ${f} copies of this water to fill 1000 mL, so multiply the salt by ${f}.`,
+    hintConcLarge:(v,n)=>`${v} mL is more than 1000 mL. It splits into ${n} portions of 1000 mL, so divide the salt by ${n}.`,
+    hintSaltSmall:(v,n)=>`${v} mL is less than 1000 mL. 1000 mL splits into ${n} portions of ${v} mL, so divide the salt by ${n}.`,
+    hintSaltLarge:(v,n)=>`${v} mL is more than 1000 mL. It takes ${n} copies of 1000 mL, so multiply the salt by ${n}.`,
+    hintEqual:"The water is already exactly 1000 mL. The salt does not change.",
+    good:"Correct!", close:"Close! Within 10%.", bad:"Not this time.", unit:"Right number, wrong unit.",
+    unitLabel:"Unit", unitPick:"unit?", needUnit:"Pick a unit: ppt or g.",
+    unitWas:(u)=>`The unit should be ${u}.`,
+    answerConc:(a)=>`${a} ppt (${a} g of salt in 1000 mL)`, pptStep:(a)=>`${a} g in 1000 mL = ${a} ppt`,
+    answerSalt:(a,v)=>`${a} g of salt in ${v} mL`,
+    sMul:(x,n)=>`${x} = ${n} copies`, sDiv:(x,n)=>`${x} = ${n} portions`,
+    stepsEqual:(a)=>`Already 1000 mL, so the answer is ${a} g`,
+    youSaid:(p)=>`You answered ${p}.`, pts:(p)=>p>0?`+${p} points`:"",
+    needNum:"Type a number first.",
+    ownBadConc:"Use salt from 0.1 to 1000 g and water from 10 to 10,000 mL.",
+    ownBadSalt:"Use salinity from 0.1 to 400 ppt and water from 10 to 10,000 mL.",
+    sat:"Heads up: water at room temperature can dissolve only about 360 g of table salt per 1000 mL. Past that, the extra salt sits on the bottom.",
+    summary:(c,n,b)=>`${c} correct out of ${n}. Best score: ${b}.`,
+    desc:(v)=>`A drawing of ${v} mL of salt water.`,
+    about:[
+      "1 mL of water has a mass of about 1 g, so grams of salt per 1000 mL is close to parts per thousand (ppt). Real ocean salinity is measured per kilogram of seawater, so the match is close, not exact.",
+      "Average ocean salinity is about 35 ppt (NOAA).",
+      "Table salt (NaCl) dissolves up to about 36 g per 100 g of water at 25 °C (CRC Handbook), so about 360 g per 1000 mL."
+    ]
+  },
+  es:{
+    title:"Salinidad a Escala", tagline:"Dibuja el problema. Cambia la escala. Encuentra la respuesta.",
+    practice:"Práctica", timed:"Prueba con tiempo", read:"Leer en voz alta",
+    score:"Puntos", streak:"Racha", level:"Nivel", best:"Récord", time:"Tiempo",
+    ph1:"1 · Como está escrito", ph2:"2 · Cambia la escala",
+    water:"Agua", salt:"Sal", copies:"Copias", portions:"Porciones",
+    typeConc:"Encuentra la salinidad", typeSalt:"Encuentra la sal", typeMix:"Mezcla", typeLabel:"Tipo de problema",
+    ownTitle:"Usar mis propios números", gLabel:"Sal (g)", cLabel:"Salinidad (ppt)", vLabel:"Agua (mL)", useMine:"Dibujarlo",
+    perL:"ppt (partes por mil)", gUnit:"g", predLabel:"Tu respuesta",
+    check:"Revisar", hint:"Pista", showMe:"Muéstrame", newP:"Nuevo problema", next:"Siguiente problema",
+    aboutTitle:"Sobre los números", timeUp:"¡Se acabó el tiempo!", again:"Jugar otra vez", backPractice:"Volver a práctica",
+    topOff:"Llenar hasta arriba", undo:"Deshacer", animPour:"Verter y separar", animBlocks:"Bloques",
+    problemConc:(g,v)=>`Se agregan <span class="num">${g} g</span> de sal a <span class="num">${v} mL</span> de agua.`,
+    problemSalt:(c,v)=>`Esta agua tiene una salinidad de <span class="num">${c} ppt</span> (${c} g de sal en cada 1000 mL). Tienes <span class="num">${v} mL</span>.`,
+    sayConc:(g,v)=>`Se agregan ${g} gramos de sal a ${v} mililitros de agua. ¿Cuál es la salinidad en partes por mil?`,
+    saySalt:(c,v)=>`Esta agua tiene una salinidad de ${c} partes por mil, o sea ${c} gramos de sal en cada 1000 mililitros. ¿Cuántos gramos de sal hay en ${v} mililitros?`,
+    qTimed:"Lee el problema. Decide qué necesitas encontrar, resuélvelo y elige la unidad.",
+    qConc:()=>"¿Cuál es la salinidad de esta agua en ppt? (ppt = gramos de sal en 1000 mL)",
+    qSalt:(v)=>`¿Cuántos gramos de sal hay en ${v} mL de esta agua?`,
+    tipFill:(target,u,s)=>`Agrega copias hasta que el recipiente tenga ${target} mL. Cada copia es ${u} mL con ${s} g de sal.`,
+    tipCut:(u)=>`Corta el agua en porciones de ${u} mL. La sal se reparte igual entre las porciones.`,
+    add:(u)=>`+ Agregar una copia (${u} mL)`, cut:(u)=>`Cortar ${u} mL`,
+    overflow:(r)=>`¡Demasiado! Solo cabe ${r} mL más. Usa "Llenar hasta arriba" para agregar parte de una copia.`,
+    roomLeft:"Todavía cabe una copia completa. Primero agrega una copia.",
+    topped:(f)=>`La última copia es solo una parte: ${f} de una copia.`,
+    lastPiece:(r,f)=>`Ya no queda una porción completa. El último pedazo es ${r} mL, o sea ${f} de una porción.`,
+    built:"¡Listo! Ahora contesta la pregunta.", nothing:"Ya son 1000 mL, así que no hay nada que construir. Contesta la pregunta.",
+    buildFirst:"Primero constrúyelo (usa los botones debajo del dibujo) y luego contesta. O presiona Muéstrame.",
+    timedNote:"Contesta primero. Luego mira cómo cambia la escala.",
+    hintConcSmall:(v,f)=>`${v} mL es menos que 1000 mL. Se necesitan ${f} copias de esta agua para llenar 1000 mL, así que multiplica la sal por ${f}.`,
+    hintConcLarge:(v,n)=>`${v} mL es más que 1000 mL. Se divide en ${n} porciones de 1000 mL, así que divide la sal entre ${n}.`,
+    hintSaltSmall:(v,n)=>`${v} mL es menos que 1000 mL. 1000 mL se divide en ${n} porciones de ${v} mL, así que divide la sal entre ${n}.`,
+    hintSaltLarge:(v,n)=>`${v} mL es más que 1000 mL. Se necesitan ${n} copias de 1000 mL, así que multiplica la sal por ${n}.`,
+    hintEqual:"El agua ya es exactamente 1000 mL. La sal no cambia.",
+    good:"¡Correcto!", close:"¡Casi! Dentro del 10%.", bad:"Esta vez no.", unit:"Número correcto, unidad incorrecta.",
+    unitLabel:"Unidad", unitPick:"¿unidad?", needUnit:"Elige una unidad: ppt o g.",
+    unitWas:(u)=>`La unidad debe ser ${u}.`,
+    answerConc:(a)=>`${a} ppt (${a} g de sal en 1000 mL)`, pptStep:(a)=>`${a} g en 1000 mL = ${a} ppt`,
+    answerSalt:(a,v)=>`${a} g de sal en ${v} mL`,
+    sMul:(x,n)=>`${x} = ${n} copias`, sDiv:(x,n)=>`${x} = ${n} porciones`,
+    stepsEqual:(a)=>`Ya son 1000 mL, así que la respuesta es ${a} g`,
+    youSaid:(p)=>`Tu respuesta fue ${p}.`, pts:(p)=>p>0?`+${p} puntos`:"",
+    needNum:"Primero escribe un número.",
+    ownBadConc:"Usa de 0.1 a 1000 g de sal y de 10 a 10,000 mL de agua.",
+    ownBadSalt:"Usa una salinidad de 0.1 a 400 ppt y de 10 a 10,000 mL de agua.",
+    sat:"Ojo: el agua a temperatura ambiente solo puede disolver unos 360 g de sal de mesa por cada 1000 mL. Lo demás se queda en el fondo.",
+    summary:(c,n,b)=>`${c} correctas de ${n}. Mejor puntaje: ${b}.`,
+    desc:(v)=>`Un dibujo de ${v} mL de agua salada.`,
+    about:[
+      "1 mL de agua tiene una masa de aproximadamente 1 g, así que los gramos de sal por 1000 mL son casi iguales a partes por mil. La salinidad real del océano se mide por kilogramo de agua de mar, así que es muy parecido, no exacto.",
+      "La salinidad promedio del océano es de unas 35 partes por mil (NOAA).",
+      "La sal de mesa (NaCl) se disuelve hasta unos 36 g por cada 100 g de agua a 25 °C (CRC Handbook), o sea unos 360 g por 1000 mL."
+    ]
+  },
+  vi:{
+    title:"Độ Mặn Theo Tỉ Lệ", tagline:"Vẽ bài toán. Đổi tỉ lệ. Tìm đáp án.",
+    practice:"Luyện tập", timed:"Kiểm tra tính giờ", read:"Đọc to",
+    score:"Điểm", streak:"Chuỗi đúng", level:"Cấp độ", best:"Cao nhất", time:"Thời gian",
+    ph1:"1 · Như đề bài", ph2:"2 · Đổi tỉ lệ",
+    water:"Nước", salt:"Muối", copies:"Bản sao", portions:"Phần",
+    typeConc:"Tìm độ mặn", typeSalt:"Tìm lượng muối", typeMix:"Trộn lẫn", typeLabel:"Loại bài toán",
+    ownTitle:"Dùng số của tôi", gLabel:"Muối (g)", cLabel:"Độ mặn (ppt)", vLabel:"Nước (mL)", useMine:"Vẽ",
+    perL:"ppt (phần nghìn)", gUnit:"g", predLabel:"Câu trả lời của bạn",
+    check:"Kiểm tra", hint:"Gợi ý", showMe:"Chỉ cho tôi", newP:"Bài mới", next:"Bài tiếp theo",
+    aboutTitle:"Về các con số", timeUp:"Hết giờ!", again:"Chơi lại", backPractice:"Quay lại luyện tập",
+    topOff:"Đổ cho đầy", undo:"Hoàn tác", animPour:"Rót và tách", animBlocks:"Khối",
+    problemConc:(g,v)=>`Thêm <span class="num">${g} g</span> muối vào <span class="num">${v} mL</span> nước.`,
+    problemSalt:(c,v)=>`Nước này có độ mặn <span class="num">${c} ppt</span> (${c} g muối trong mỗi 1000 mL). Bạn có <span class="num">${v} mL</span> nước này.`,
+    sayConc:(g,v)=>`Thêm ${g} gam muối vào ${v} mi-li-lít nước. Độ mặn là bao nhiêu phần nghìn?`,
+    saySalt:(c,v)=>`Nước này có độ mặn ${c} phần nghìn, tức là ${c} gam muối trong mỗi 1000 mi-li-lít. Có bao nhiêu gam muối trong ${v} mi-li-lít?`,
+    qTimed:"Đọc bài toán. Tự quyết định cần tìm gì, giải bài và chọn đơn vị.",
+    qConc:()=>"Độ mặn của nước này là bao nhiêu ppt? (ppt = số gam muối trong 1000 mL)",
+    qSalt:(v)=>`Có bao nhiêu gam muối trong ${v} mL nước này?`,
+    tipFill:(target,u,s)=>`Thêm các bản sao cho đến khi bình chứa ${target} mL. Mỗi bản sao là ${u} mL có ${s} g muối.`,
+    tipCut:(u)=>`Cắt nước thành các phần ${u} mL. Muối được chia đều cho các phần.`,
+    add:(u)=>`+ Thêm một bản sao (${u} mL)`, cut:(u)=>`Cắt ra ${u} mL`,
+    overflow:(r)=>`Quá nhiều! Chỉ còn chỗ cho ${r} mL. Hãy dùng "Đổ cho đầy" để thêm một phần của bản sao.`,
+    roomLeft:"Vẫn còn chỗ cho một bản sao đầy đủ. Hãy thêm một bản sao trước.",
+    topped:(f)=>`Bản sao cuối cùng chỉ là một phần: ${f} bản sao.`,
+    lastPiece:(r,f)=>`Không còn đủ cho một phần đầy đủ. Mẩu cuối là ${r} mL, tức là ${f} phần.`,
+    built:"Xong! Bây giờ hãy trả lời câu hỏi.", nothing:"Đã là 1000 mL rồi, nên không cần xây. Hãy trả lời câu hỏi.",
+    buildFirst:"Hãy xây trước (dùng các nút dưới hình), rồi trả lời. Hoặc bấm Chỉ cho tôi.",
+    timedNote:"Trả lời trước. Sau đó xem hình đổi tỉ lệ.",
+    hintConcSmall:(v,f)=>`${v} mL ít hơn 1000 mL. Cần ${f} bản sao của nước này để được 1000 mL, nên nhân lượng muối với ${f}.`,
+    hintConcLarge:(v,n)=>`${v} mL nhiều hơn 1000 mL. Nó chia thành ${n} phần 1000 mL, nên chia lượng muối cho ${n}.`,
+    hintSaltSmall:(v,n)=>`${v} mL ít hơn 1000 mL. 1000 mL chia thành ${n} phần ${v} mL, nên chia lượng muối cho ${n}.`,
+    hintSaltLarge:(v,n)=>`${v} mL nhiều hơn 1000 mL. Cần ${n} bản sao 1000 mL, nên nhân lượng muối với ${n}.`,
+    hintEqual:"Nước đã đúng 1000 mL. Lượng muối không đổi.",
+    good:"Đúng rồi!", close:"Gần đúng! Sai lệch dưới 10%.", bad:"Lần này chưa đúng.", unit:"Đúng số, sai đơn vị.",
+    unitLabel:"Đơn vị", unitPick:"đơn vị?", needUnit:"Hãy chọn đơn vị: ppt hoặc g.",
+    unitWas:(u)=>`Đơn vị phải là ${u}.`,
+    answerConc:(a)=>`${a} ppt (${a} g muối trong 1000 mL)`, pptStep:(a)=>`${a} g trong 1000 mL = ${a} ppt`,
+    answerSalt:(a,v)=>`${a} g muối trong ${v} mL`,
+    sMul:(x,n)=>`${x} = ${n} bản sao`, sDiv:(x,n)=>`${x} = ${n} phần`,
+    stepsEqual:(a)=>`Đã là 1000 mL, nên đáp án là ${a} g`,
+    youSaid:(p)=>`Bạn trả lời ${p}.`, pts:(p)=>p>0?`+${p} điểm`:"",
+    needNum:"Hãy nhập một số trước.",
+    ownBadConc:"Dùng muối từ 0.1 đến 1000 g và nước từ 10 đến 10 000 mL.",
+    ownBadSalt:"Dùng độ mặn từ 0.1 đến 400 ppt và nước từ 10 đến 10 000 mL.",
+    sat:"Lưu ý: nước ở nhiệt độ phòng chỉ hòa tan được khoảng 360 g muối ăn trong mỗi 1000 mL. Phần muối thừa sẽ nằm dưới đáy.",
+    summary:(c,n,b)=>`Đúng ${c} trên ${n} câu. Điểm cao nhất: ${b}.`,
+    desc:(v)=>`Hình vẽ ${v} mL nước muối.`,
+    about:[
+      "1 mL nước nặng khoảng 1 g, nên số gam muối trong 1000 mL gần bằng phần nghìn (‰). Độ mặn thật của đại dương được đo trên mỗi kilôgam nước biển, nên con số này gần đúng, không chính xác hoàn toàn.",
+      "Độ mặn trung bình của đại dương khoảng 35 phần nghìn (NOAA).",
+      "Muối ăn (NaCl) hòa tan tối đa khoảng 36 g trong 100 g nước ở 25 °C (CRC Handbook), tức khoảng 360 g trong 1000 mL."
+    ]
+  }
+};
+const VOICE = { en:"en-US", es:"es-MX", vi:"vi-VN" };
+
+// ---------- Game state ----------
+const S = {
+  lang:"en", mode:"practice", ptype:"conc",
+  score:0, streak:0, correct:0, attempts:0, level:1, best:0,
+  prob:null,          // {kind:"conc"|"salt", V, g, C, ans}
+  phase:"idle",       // idle | build | predict | animating | result
+  hintOn:false, showUsed:false, busy:false,
+  speed:1, timeLeft:90, timerId:null,
+  run:0,              // bumps every new problem so old animations stop
+  lastSay:"", lastResult:null,
+  view:"pic",         // Practice / Layer stack: "pic" | "word" | "mix"
+  anim:"pour",        // animation style: "pour" (cup + separate beakers) or "blocks"
+  boost:1
+};
+const TIMED_SECONDS = 90;
+const SAT = 360;    // ~g NaCl per 1000 mL water at 25 °C
+const EPS = 1e-6;
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $ = id => document.getElementById(id);
+const t = () => T[S.lang];
+
+try { S.best = Number(localStorage.getItem("ssu-best")) || 0; } catch(e) {}
+
+// ---------- Number helpers ----------
+function fmt(n){
+  return String(Number(n.toFixed(2)));   // up to 2 decimals, no trailing zeros (31.25 stays 31.25)
+}
+const inexact = n => Math.abs(n - Number(fmt(n))) > 1e-9;   // needs "≈"?
+const approx = n => (inexact(n) ? "≈" : "") + fmt(n);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+
+// ---------- Problem generator (difficulty grows with level) ----------
+// Picks a salinity C (g per 1000 mL) and a volume V, then g = C × V / 1000.
+// Level 1: whole-number factors. Level 2: factors like 2.5 or 1.25.
+// Level 3: any volume; answers rounded to 0.1.
+function makeNumbers(level){
+  for (let i = 0; i < 300; i++){
+    const small = Math.random() < 0.5;
+    let V, C, dec = 1;
+    if (level === 1){
+      V = small ? pick([100,200,250,500]) : pick([2000,4000,5000]);
+      C = pick([2,4,5,10,12,20,30,35,40,50,60,100]);
+    } else if (level === 2){
+      V = small ? pick([125,200,250,400,500,800]) : pick([1500,2000,2500,4000,5000]);
+      C = pick([0.4,3,6,8,14,18,25,32,35,36,38,44,70,120,250]);
+      dec = 2;
+    } else {
+      V = small ? pick([50,75,150,300,350,600,750]) : pick([1200,1250,2500,3500,7500]);
+      C = Math.random() < 0.15 ? pick([0.3,300,340]) : Math.round(rand(1,80) * 10) / 10;
+      dec = 2;
+    }
+    const scaled = C * V / 1000 * 10 ** dec;
+    if (Math.abs(scaled - Math.round(scaled)) > 1e-6) continue;   // keep grams tidy
+    const g = Math.round(scaled) / 10 ** dec;
+    if (g < 0.1) continue;
+    return { V, g, C: g * 1000 / V };
+  }
+  return { V:250, g:8.75, C:35 };
+}
+function makeProblem(kind){
+  const n = makeNumbers(S.level);
+  return finishProblem(kind, n);
+}
+function finishProblem(kind, n){
+  return { kind, V:n.V, g:n.g, C:n.C, ans: kind === "conc" ? n.C : n.g };
+}
+function chooseKind(){
+  // Timed test always mixes both kinds, so students must work out what each problem asks for.
+  if (S.mode === "timed") return pick(["conc","salt"]);
+  return S.ptype === "mix" ? pick(["conc","salt"]) : S.ptype;
+}
+
+// ---------- SVG helpers ----------
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent){
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function text(x, y, str, cls, parent, anchor = "middle"){
+  const e = el("text", { x, y, class: cls, "text-anchor": anchor }, parent);
+  e.textContent = str; return e;
+}
+// S.boost speeds up long automatic builds (e.g. 20 copies) so they don't drag.
+const pace = () => S.speed * (S.boost || 1);
+const sleep = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms / pace()));
+const EASE = {
+  inout: p => p < .5 ? 2*p*p : 1 - (-2*p + 2) ** 2 / 2,
+  lin:   p => p,
+  in:    p => p * p * p,                       // falling
+  out:   p => 1 - (1 - p) ** 3
+};
+// Tween 0→1 over ms; stops early if a new problem started.
+function tween(ms, fn, ease = "inout"){
+  const myRun = S.run, dur = reduced ? 0 : ms / pace();
+  return new Promise(res => {
+    if (dur === 0){ fn(1); return res(); }
+    const t0 = performance.now();
+    (function step(now){
+      if (S.run !== myRun) return res();
+      const p = clamp((now - t0) / dur, 0, 1);
+      fn(EASE[ease](p));
+      p < 1 ? requestAnimationFrame(step) : res();
+    })(t0);
+  });
+}
+const lerp = (a, b, e) => a + (b - a) * e;
+
+/* ---------- Geometry ----------
+   The container always holds CAP = the bigger of V and 1000 mL.
+   The repeated piece is UNIT = the smaller of V and 1000 mL.
+   cap ≤ 1000 → a tall beaker (pieces stack as layers, "v")
+   cap > 1000 → a wide tank (pieces sit side by side, "h") */
+let Gm = {}, Bd = {}, D = {};
+const DISH_X = 85, GROUND = 325;
+
+function setupGeometry(){
+  const p = S.prob;
+  const cap = Math.max(p.V, 1000), unit = Math.min(p.V, 1000);
+  const n = cap / unit, whole = Math.floor(n + EPS);
+  let rem = cap - whole * unit; if (rem < EPS) rem = 0;
+  // FILL when we need more water than we start with; CUT when we need less.
+  const fill = p.V !== 1000 && ((p.kind === "conc") === (p.V < 1000));
+  Gm = { cap, unit, n, whole, rem, fill, orient: cap <= 1000 ? "v" : "h" };
+
+  if (Gm.orient === "v"){
+    const X = 250, W = 180, TOP = 55, BOT = GROUND - 5, H = BOT - TOP;
+    const yOf = m => BOT - H * m / cap;
+    Object.assign(Gm, { X, W, TOP, BOT, H, yOf,
+      region:(a,b) => ({ x:X, y:yOf(b), w:W, h:yOf(a) - yOf(b) }),
+      dot:(m,s) => ({ x:X + 6 + s * (W - 12), y:clamp(yOf(m), TOP + 4, BOT - 4) }) });
+  } else {
+    const secW = Math.min(170, 500 / (cap / 1000));
+    const X = 175, W = secW * cap / 1000, TOP = 105, BOT = GROUND - 5;
+    const xOf = m => X + W * m / cap;
+    Object.assign(Gm, { X, W, TOP, BOT, secW, xOf,
+      region:(a,b) => ({ x:xOf(a), y:TOP + 10, w:xOf(b) - xOf(a), h:BOT - TOP - 10 }),
+      dot:(m,s) => ({ x:clamp(xOf(m), X + 4, X + W - 4), y:TOP + 16 + s * (BOT - TOP - 22) }) });
+  }
+  // Build state. k = copies poured in (FILL, starts at 1) or cuts made (CUT, starts at 0).
+  Bd = { k: Gm.fill ? 1 : 0, part:false, done: p.V === 1000 };
+}
+// How much water is in the container right now (FILL); CUT is always full.
+const filled = () => Gm.fill ? Math.min(Gm.cap, Bd.k * Gm.unit + (Bd.part ? Gm.rem : 0)) : Gm.cap;
+// The salt "pile" shown at the start: the grams that are given in the problem.
+const givenSalt = () => S.prob.kind === "conc" ? S.prob.g : S.prob.C;
+
+// ---------- Drawing ----------
+/* Layers, bottom to top:
+     water (main container) → bench water (cut-off portions) → moving water
+     → salt dots → glass + ticks → copy lines/labels → bench glass/labels
+     → effects (cup, stream, knife) → highlight
+   Every dot remembers its spot along the container (m, in mL) and a random
+   cross-position (s), so we can always compute where it belongs.            */
+
+// The "bench": a row of small beakers under the picture for cut-off portions.
+const SLOT = { n:8, x0:24, step:86, w:64, top:400, bot:465 };
+const slotOf = j => Math.min(j, SLOT.n) - 1;              // piece j (1-based) → bench spot
+const slotRect = j => ({ x:SLOT.x0 + slotOf(j) * SLOT.step, y:SLOT.top, w:SLOT.w, h:SLOT.bot - SLOT.top });
+// Cut-off portions come off the END of the container (top of beaker / right of tank).
+const pieceRange = j => [Gm.cap - j * Gm.unit, Gm.cap - (j - 1) * Gm.unit];
+const pieceOf = m => Math.max(1, Math.ceil((Gm.cap - m) / Gm.unit - EPS));
+// Water still in the main container
+const remaining = () => Gm.fill ? filled() : Gm.cap - Bd.k * Gm.unit;
+const useBench = () => !Gm.fill && S.prob.V !== 1000;
+const style = () => S.anim;   // "pour" | "blocks"
+
+function drawProblem(){
+  const p = S.prob, svg = $("stage");
+  svg.querySelectorAll(":scope > :not(desc)").forEach(n => n.remove());
+  $("stageDesc").textContent = t().desc(fmt(p.V));
+  setupGeometry();
+  svg.setAttribute("viewBox", `0 0 720 ${useBench() ? 495 : 360}`);
+  D = { dots: [] };
+
+  // salt dish + pile (square-root sizing so big piles still fit)
+  el("path", { d:`M${DISH_X-60} ${GROUND-14} Q${DISH_X} ${GROUND+10} ${DISH_X+60} ${GROUND-14}`, class:"dish" }, svg);
+  D.pileH = clamp(8 + Math.sqrt(givenSalt()) * 5, 10, 95);
+  D.pile = el("path", { class:"pile" }, svg);
+  setPile(1);
+  text(DISH_X, GROUND + 28, `${fmt(givenSalt())} g`, "lbl-big", svg);
+
+  D.water = el("rect", { class:"water" }, svg);
+  D.benchWater = el("g", {}, svg);
+  D.moving = el("g", {}, svg);
+  D.dotLayer = el("g", {}, svg);
+  D.box = el("g", {}, svg);           // glass outline (shakes on a mistake)
+  D.pieces = el("g", {}, svg);
+  D.bench = el("g", {}, svg);
+  D.fx = el("g", {}, svg);
+  D.hi = el("g", {}, svg);
+
+  if (Gm.orient === "v"){
+    const { X, W, TOP, BOT, yOf } = Gm;
+    el("path", { d:`M${X-10} ${TOP-8} L${X} ${TOP} L${X} ${BOT} Q${X} ${BOT+6} ${X+6} ${BOT+6} L${X+W-6} ${BOT+6} Q${X+W} ${BOT+6} ${X+W} ${BOT} L${X+W} ${TOP-8}`, class:"glass" }, D.box);
+    for (let m = 100; m <= 1000; m += 100){            // graduations
+      const y = yOf(m), long = m % 200 === 0;
+      el("line", { x1:X+W-(long?22:12), x2:X+W, y1:y, y2:y, class:"tick" }, D.box);
+      if (long) text(X+W+8, y+4, `${m}`, "lbl", D.box, "start");
+    }
+    text(X+W+8, TOP-14, "mL", "lbl", D.box, "start");
+    D.vLabel = text(X - 14, 0, "", "lbl-big", svg, "end");
+  } else {
+    const { X, W, TOP, BOT, xOf, cap } = Gm;
+    el("path", { d:`M${X} ${TOP} L${X} ${BOT} L${X+W} ${BOT} L${X+W} ${TOP}`, class:"glass" }, D.box);
+    for (let m = 500; m < cap - EPS; m += 500){         // ruler under the tank
+      const x = xOf(m), long = m % 1000 === 0;
+      el("line", { x1:x, x2:x, y1:BOT+2, y2:BOT+(long?12:7), class:"tick" }, D.box);
+      if (long && Gm.secW >= 40) text(x, BOT+26, `${m}`, "lbl", D.box);
+    }
+    text(X + W/2, TOP - 14, `${fmt(cap)} mL`, "lbl-big", svg);
+  }
+
+  // dots: spread evenly along the container so every piece gets its fair share
+  const saltInCap = p.C * Gm.cap / 1000;
+  D.gPerDot = Math.max(p.C / 260, saltInCap / 700, 1/8);
+  const count = Math.round(saltInCap / D.gPerDot);
+  for (let i = 0; i < count; i++){
+    const m = (i + Math.random()) / count * Gm.cap, s = Math.random(), h = Gm.dot(m, s);
+    D.dots.push({ m, s, hx:h.x, hy:h.y, c: el("circle", { cx:h.x, cy:h.y, r:3, class:"grain", opacity:0 }, D.dotLayer) });
+  }
+  snapRender(false);
+}
+
+function setPile(f){   // f = 1 full pile, 0 empty
+  const h = D.pileH * f, w = 30 + 70 * Math.sqrt(f) * (D.pileH / 95 + .3), y = GROUND - 10;
+  D.pile.setAttribute("d", `M${DISH_X - w/2} ${y} Q${DISH_X} ${y - h*2} ${DISH_X + w/2} ${y} Z`);
+  D.pile.style.display = f < .02 ? "none" : "";
+}
+function setRect(r, box){
+  r.setAttribute("x", box.x); r.setAttribute("y", box.y);
+  r.setAttribute("width", Math.max(0, box.w)); r.setAttribute("height", Math.max(0, box.h));
+}
+function setWater(mL){
+  setRect(D.water, Gm.region(0, mL));
+  if (Gm.orient === "v"){ D.vLabel.setAttribute("y", Gm.yOf(mL) + 5); D.vLabel.textContent = `${fmt(Math.round(mL * 10) / 10 === Math.round(mL) ? mL : Math.round(mL))} mL`; }
+}
+const placeDot = (d, x, y, o) => { d.c.setAttribute("cx", x); d.c.setAttribute("cy", y); d.c.setAttribute("opacity", o); };
+// Where a dot sits once its portion has moved to the bench
+function benchSpot(d){
+  const j = pieceOf(d.m), [a] = pieceRange(j), r = slotRect(j), f = (d.m - a) / Gm.unit;
+  return { x: r.x + 5 + d.s * (r.w - 10), y: r.y + r.h - 4 - f * (r.h - 8) };
+}
+
+/* Draw everything for the current build state, with no animation.
+   Animations move things around and then call this, so nothing jumps. */
+function snapRender(showDots = true){
+  const rest = remaining();
+  setWater(rest);
+  D.moving.innerHTML = ""; D.fx.innerHTML = "";
+  D.dots.forEach(d => {
+    if (d.m <= rest + EPS) placeDot(d, d.hx, d.hy, showDots ? 1 : 0);
+    else if (!Gm.fill && pieceOf(d.m) <= Bd.k){ const b = benchSpot(d); placeDot(d, b.x, b.y, 1); }
+    else placeDot(d, d.hx, d.hy, 0);
+  });
+  renderBench();
+  renderPieces();
+}
+
+// Bench: one small beaker (or bare block) per cut-off portion
+function renderBench(){
+  D.benchWater.innerHTML = ""; D.bench.innerHTML = "";
+  if (!useBench()) return;
+  const used = Math.min(Bd.k, SLOT.n);
+  for (let j = 1; j <= used; j++){
+    const r = slotRect(j);
+    el("rect", { x:r.x, y:r.y, width:r.w, height:r.h, class: style() === "blocks" ? "block" : "water", rx: style() === "blocks" ? 6 : 0 }, D.benchWater);
+    if (style() === "pour") el("path", { d:`M${r.x-2} ${r.y-8} L${r.x-2} ${r.y+r.h+2} L${r.x+r.w+2} ${r.y+r.h+2} L${r.x+r.w+2} ${r.y-8}`, class:"slotglass" }, D.bench);
+    text(r.x + r.w/2, SLOT.bot + 22, `${fmt(Gm.unit)} mL`, "lbl", D.bench);
+  }
+  if (Bd.k > SLOT.n){                       // more portions than spots: stack them
+    const r = slotRect(SLOT.n);
+    text(r.x + r.w/2, r.y - 14, `×${Bd.k - SLOT.n + 1}`, "lbl-big", D.bench);   // stacked count above the last beaker
+  }
+}
+
+// Lines between copies + labels (×1, ×2 …); label for the leftover piece after cutting
+function renderPieces(){
+  const g = D.pieces; g.innerHTML = "";
+  const { unit, rem, fill, orient } = Gm;
+  const lineAt = (m, cls) => {
+    if (orient === "v"){ const y = Gm.yOf(m); el("line", { x1:Gm.X, x2:Gm.X+Gm.W, y1:y, y2:y, class:cls }, g); }
+    else { const x = Gm.xOf(m); el("line", { x1:x, x2:x, y1:Gm.TOP+10, y2:Gm.BOT, class:cls }, g); }
+  };
+  // Labels sit on a solid pill so they stay readable over the water and salt dots.
+  const pill = (cx, cy, str) => {
+    const w = str.length * 9 + 14, h = 22;
+    el("rect", { x:cx - w/2, y:cy - h/2, width:w, height:h, rx:11, class:"pill" }, g);
+    text(cx, cy + 5, str, "pill-txt", g);
+    return w;
+  };
+  const labelPiece = (a, b, str) => {
+    const w = str.length * 9 + 14;
+    if (orient === "v"){ if (Gm.yOf(a) - Gm.yOf(b) >= 24) pill(Gm.X + 8 + w/2, Gm.yOf(a) - 13, str); }
+    else if (Gm.xOf(b) - Gm.xOf(a) >= w + 6) pill((Gm.xOf(a) + Gm.xOf(b)) / 2, Gm.BOT - 16, str);
+  };
+  if (S.prob.V === 1000) return;
+  if (fill){
+    for (let j = 1; j <= Bd.k; j++){
+      if (j < Bd.k || Bd.part) lineAt(j * unit, "layer");
+      labelPiece((j-1) * unit, j * unit, `×${j}`);
+    }
+    if (Bd.part) labelPiece(Bd.k * unit, Gm.cap, `+${fmt(rem / unit)}`);
+  } else if (Bd.done && orient === "h"){
+    labelPiece(0, remaining(), `${fmt(remaining())}`);
+  }
+}
+
+// Dashed outline around the water the question is about, with its salt.
+function renderHighlight(revealed){
+  const g = D.hi; g.innerHTML = "";
+  const p = S.prob;
+  const target = p.kind === "conc" ? 1000 : p.V;
+  let str = `${fmt(target)} mL → ${revealed ? fmt(p.ans) : "?"} g`;
+  if (revealed && p.kind === "conc") str += ` = ${fmt(p.ans)} ppt`;
+  if (useBench()){                       // the first portion on the bench
+    const r = slotRect(1);
+    el("rect", { x:r.x - 6, y:r.y - 12, width:r.w + 12, height:r.h + 18, class:"hi" }, g);
+    text(r.x - 6, r.y - 20, str, "hi-lbl", g, "start");
+    return;
+  }
+  const full = Gm.region(0, Gm.cap), top = Gm.TOP;
+  el("rect", { x:full.x + 2, y:top - 2, width:full.w - 4, height:Gm.BOT - top + 2, class:"hi" }, g);
+  if (Gm.orient === "v") text(Gm.X + Gm.W / 2, Gm.TOP - 26, str, "hi-lbl", g);
+  else text(Gm.X + Gm.W / 2, Gm.TOP - 40, str, "hi-lbl", g);
+}
+
+// ---------- Readout chips ----------
+function updateReadout(revealed){
+  const p = S.prob;
+  // Timed test: hide the chips until the student has answered ("Salt: ? g" would hint the unit)
+  document.querySelector(".readout").hidden = (S.mode === "timed" || p.word) && S.phase === "predict" && !revealed;
+  $("roWater").textContent = `${fmt(filled())} mL`;
+  $("roKLabel").textContent = Gm.fill ? t().copies : t().portions;
+  let k;
+  if (p.V === 1000) k = 1;
+  else if (Gm.fill) k = Bd.k + (Bd.part ? Gm.rem / Gm.unit : 0);
+  else k = Bd.done ? Gm.n : Bd.k;
+  $("roK").textContent = fmt(k);
+  $("roSalt").textContent = revealed ? `${fmt(p.ans)} g` : "? g";
+}
+function setPhase(n){
+  $("ph1").classList.toggle("on", n === 1);
+  $("ph2").classList.toggle("on", n === 2);
+}
+
+// ---------- Phase 1: draw it exactly as written ----------
+async function playAsWritten(){
+  const myRun = S.run;
+  setPhase(1);
+  updateReadout(false);
+  const shown = D.dots.filter(d => d.m <= remaining() + EPS);
+  await sleep(250);
+  await tween(1100, f => {
+    setPile(1 - f);
+    shown.forEach((d, i) => { if (i / shown.length < f) d.c.setAttribute("opacity", 1); });
+  });
+  if (S.run !== myRun) return;
+  shown.forEach(d => d.c.setAttribute("opacity", 1));
+}
+
+// ---------- Physical animations ----------
+/* POUR: a measuring cup holding one copy slides in, tips, and pours.
+   The salt dots ride the stream down into the water. Reverse = scoop back out.
+   cupFrom / cupTo = how full the cup is before / after (1 = one whole copy). */
+async function animPour(from, to, cupFrom, cupTo){
+  const adding = to > from, myRun = S.run;
+  const each = S.prob.kind === "conc" ? S.prob.g : S.prob.C;
+  // where the stream lands, and where the cup waits
+  let landX, cupX, cupY;
+  if (Gm.orient === "v"){ landX = Gm.X + Gm.W - 45; cupX = Gm.X + Gm.W + 62; cupY = 58; }
+  else { landX = Gm.xOf((from + to) / 2); cupX = landX + 22; cupY = 40; }
+  const landY = () => Gm.orient === "v" ? Gm.yOf(Math.max(from, to) ) : Gm.TOP + 12;
+  const CW = 54, CH = 66;
+  const cup = el("g", {}, D.fx);
+  const cupWater = el("rect", { x:3, width:CW - 6, class:"water" }, cup);
+  el("path", { d:`M0 0 L4 ${CH} L${CW-4} ${CH} L${CW} 0`, class:"cup" }, cup);
+  const tag = el("g", {}, cup);
+  text(CW/2, -20, `${fmt(Gm.unit)} mL`, "lbl-copy", tag);
+  text(CW/2, -6, `${fmt(each)} g`, "lbl-copy", tag);
+  const setCup = f => { cupWater.setAttribute("y", CH - (CH - 4) * f); cupWater.setAttribute("height", (CH - 4) * f); };
+  let cx = 760, ang = 0;
+  const place = () => cup.setAttribute("transform", `translate(${cx} ${cupY}) rotate(${ang})`);
+  setCup(cupFrom); place();
+  const stream = el("path", { class:"stream", opacity:0 }, D.fx);
+
+  // which dots travel, and when (by their spot in the water)
+  const lo = Math.min(from, to), hi = Math.max(from, to);
+  const movers = D.dots.filter(d => d.m > lo + EPS && d.m <= hi + EPS);
+  movers.forEach(d => d.t0 = adding ? 0.75 * (d.m - lo) / (hi - lo) : Math.max(0, 0.75 * (hi - d.m) / (hi - lo) - 0.15));
+
+  await tween(420, e => { cx = lerp(760, cupX, e); place(); }, "out");       // slide in
+  tag.setAttribute("opacity", 0);
+  await tween(330, e => { ang = -105 * e; place(); });                          // tip
+  if (S.run !== myRun) return;
+  const lip = { x: cupX, y: cupY };
+  await tween(850 + 25 * movers.length ** .5, e => {                            // pour (or scoop)
+    const lvl = lerp(from, to, Math.min(1, e / 0.8));
+    setWater(lvl);
+    setCup(lerp(cupFrom, cupTo, Math.min(1, e / 0.8)));
+    const ly = Gm.orient === "v" ? Gm.yOf(lvl) : landY();
+    stream.setAttribute("d", `M${lip.x} ${lip.y + 4} Q${lip.x - 6} ${lip.y + 40} ${landX} ${ly}`);
+    stream.setAttribute("opacity", e < 0.85 ? 1 : (1 - e) / 0.15);
+    movers.forEach(d => {
+      const k = clamp((e - d.t0) / 0.25, 0, 1);
+      if (adding) placeDot(d, lerp(landX, d.hx, k), lerp(ly, d.hy, k), k > 0 ? 1 : 0);
+      else placeDot(d, lerp(d.hx, landX, k), lerp(d.hy, ly, k), k < 1 ? 1 : 0);
+    });
+  }, "lin");
+  stream.remove();
+  await tween(280, e => { ang = -105 * (1 - e); place(); });                    // tip back
+  await tween(360, e => { cx = lerp(cupX, 760, e); place(); }, "in");          // slide away
+  cup.remove();
+}
+
+/* BLOCKS: a block of water (with its salt) drops in from above and stacks.
+   Reverse = it lifts back out. */
+async function animBlock(from, to){
+  const adding = to > from;
+  const lo = Math.min(from, to), hi = Math.max(from, to);
+  const r = Gm.region(lo, hi);
+  const lift = r.y + r.h + 10;                     // far enough to be fully above the picture
+  const blk = el("rect", { x:r.x, y:r.y, width:r.w, height:r.h, rx:4, class:"block" }, D.moving);
+  const movers = D.dots.filter(d => d.m > lo + EPS && d.m <= hi + EPS);
+  setWater(lo);                                    // main water without this block
+  await tween(adding ? 520 : 460, e => {
+    const off = adding ? -lift * (1 - e) : -lift * e;
+    blk.setAttribute("y", r.y + off);
+    blk.setAttribute("opacity", adding ? 1 : 1 - e);
+    movers.forEach(d => placeDot(d, d.hx, d.hy + off, adding ? 1 : 1 - e));
+  }, adding ? "in" : "in");
+  blk.remove();
+}
+
+/* CUT / SPLIT: the knife marks the cut, then that portion lifts out and moves
+   into its own small beaker on the bench (or slides out as a block).
+   Reverse = it moves back into the container. */
+async function animCut(j, back){
+  const [a, b] = pieceRange(j), from = Gm.region(a, b), to = slotRect(j);
+  if (!back){
+    // knife line across the water at the cut
+    const kn = Gm.orient === "v"
+      ? el("line", { x1:Gm.X - 8, x2:Gm.X - 8, y1:Gm.yOf(a), y2:Gm.yOf(a), class:"knife" }, D.fx)
+      : el("line", { x1:Gm.xOf(a), x2:Gm.xOf(a), y1:Gm.TOP - 10, y2:Gm.TOP - 10, class:"knife" }, D.fx);
+    await tween(300, e => Gm.orient === "v" ? kn.setAttribute("x2", lerp(Gm.X - 8, Gm.X + Gm.W + 8, e)) : kn.setAttribute("y2", lerp(Gm.TOP - 10, Gm.BOT + 4, e)));
+  }
+  const blk = el("rect", { class: style() === "blocks" ? "block" : "water", rx: style() === "blocks" ? 6 : 0 }, D.moving);
+  let glass = null;
+  if (style() === "pour" && !back && Bd.k <= SLOT.n)
+    glass = el("path", { d:`M${to.x-2} ${to.y-8} L${to.x-2} ${to.y+to.h+2} L${to.x+to.w+2} ${to.y+to.h+2} L${to.x+to.w+2} ${to.y-8}`, class:"slotglass", opacity:0 }, D.fx);
+  const movers = D.dots.filter(d => pieceOf(d.m) === j && d.m > a - EPS);
+  const spots = movers.map(benchSpot);
+  // main water: without this piece while it travels
+  setWater(a);
+  if (back) D.benchWater.lastChild && Bd.k + 1 <= SLOT.n && D.benchWater.lastChild.remove();
+  await tween(750, e0 => {
+    const e = back ? 1 - e0 : e0;
+    const arc = -50 * Math.sin(Math.PI * e);       // lift up, then set down
+    setRect(blk, { x:lerp(from.x, to.x, e), y:lerp(from.y, to.y, e) + arc, w:lerp(from.w, to.w, e), h:lerp(from.h, to.h, e) });
+    if (glass) glass.setAttribute("opacity", e);
+    movers.forEach((d, i) => placeDot(d, lerp(d.hx, spots[i].x, e), lerp(d.hy, spots[i].y, e) + arc, 1));
+  });
+}
+
+// ---------- Phase 2: build actions (buttons in Practice, automatic in the test) ----------
+function bmsg(str, cls){ const m = $("bMsg"); m.textContent = str; m.className = "bmsg " + (cls || ""); if (str) S.lastSay = str; }
+function oops(){
+  D.box.classList.remove("oops"); void D.box.getBBox(); D.box.classList.add("oops");
+  setTimeout(() => D.box && D.box.classList.remove("oops"), 600);
+}
+// One copy (or part of one) going in or out of the container
+function moveWater(from, to, cupFrom, cupTo){
+  return style() === "pour" ? animPour(from, to, cupFrom, cupTo) : animBlock(from, to);
+}
+
+async function doAdd(){            // FILL: pour in one more whole copy
+  if (Bd.done || S.busy || !Gm.fill) return;
+  const room = Gm.cap - filled();
+  if (Gm.unit > room + EPS){ oops(); bmsg(t().overflow(fmt(room)), "bad"); return; }
+  S.busy = true; setPhase(2); bmsg("");
+  const from = filled(), myRun = S.run; Bd.k++;
+  await moveWater(from, filled(), 1, 0);
+  if (S.run !== myRun) return;          // a new problem started meanwhile
+  S.busy = false;
+  afterStep();
+}
+async function doTop(){            // FILL: pour in only the part of a copy that fits
+  if (Bd.done || S.busy || !Gm.fill) return;
+  if (Gm.rem === 0 || Bd.k < Gm.whole){ oops(); bmsg(t().roomLeft, "bad"); return; }
+  S.busy = true; setPhase(2); bmsg("");
+  const from = filled(), myRun = S.run; Bd.part = true;
+  await moveWater(from, filled(), 1, 1 - Gm.rem / Gm.unit);   // some water stays in the cup
+  if (S.run !== myRun) return;
+  S.busy = false;
+  afterStep();
+  bmsg(t().topped(approx(Gm.rem / Gm.unit)) + " " + t().built, "good");
+}
+async function doCut(){            // CUT: cut off one more portion
+  if (Bd.done || S.busy || Gm.fill) return;
+  if ((Bd.k + 1) * Gm.unit >= Gm.cap - EPS) return;
+  S.busy = true; setPhase(2); bmsg("");
+  const myRun = S.run; Bd.k++;
+  await animCut(Bd.k, false);
+  if (S.run !== myRun) return;
+  S.busy = false;
+  afterStep();
+}
+async function doUndo(){           // run the last step backwards
+  if (S.busy || S.phase === "result" || S.phase === "animating") return;
+  const myRun = S.run;
+  if (Gm.fill){
+    if (!Bd.part && Bd.k <= 1) return;
+    S.busy = true;
+    const from = filled();
+    if (Bd.part){ Bd.part = false; await moveWater(from, filled(), 1 - Gm.rem / Gm.unit, 1); }
+    else { Bd.k--; await moveWater(from, filled(), 0, 1); }
+  } else {
+    if (Bd.k === 0) return;
+    S.busy = true;
+    const j = Bd.k; Bd.k--;
+    await animCut(j, true);
+  }
+  if (S.run !== myRun) return;
+  S.busy = false;
+  Bd.done = false; D.hi.innerHTML = "";
+  if (S.phase === "predict"){ S.phase = "build"; setAnswerEnabled(false); }   // must finish building again
+  snapRender(); updateReadout(false); bmsg("");
+  syncButtons();
+}
+// After each step: redraw and see if the build is finished.
+function afterStep(){
+  if (Gm.fill) Bd.done = filled() >= Gm.cap - EPS;
+  else Bd.done = (Bd.k + 1) * Gm.unit >= Gm.cap - EPS;
+  snapRender(); updateReadout(false);
+  if (Bd.done){
+    renderHighlight(false);
+    if (!Gm.fill && Gm.rem > 0) bmsg(t().lastPiece(fmt(Gm.rem), approx(Gm.rem / Gm.unit)) + " " + t().built, "good");
+    else if (!Bd.part) bmsg(t().built, "good");
+    if (S.phase === "build") enterPredict();
+  }
+  syncButtons();
+}
+// Automatic build, used by the timed test and by "Show me".
+async function autoBuild(){
+  const myRun = S.run;
+  setPhase(2);
+  S.boost = Math.max(1, Gm.n / 2.5);     // long builds play faster
+  while (!Bd.done && S.run === myRun){
+    if (Gm.fill){
+      if (Gm.unit <= Gm.cap - filled() + EPS) await doAdd(); else await doTop();
+    } else await doCut();
+    await sleep(120);
+  }
+  S.boost = 1;
+}
+
+// ---------- Flow ----------
+// Highlight the class equation that fits what the student is solving right now.
+// Layer stack is always "find the salinity".
+function syncEq(){
+  // Timed test: no clue about which one to use — both look the same.
+  $("eqBox").classList.toggle("nocap", S.mode === "timed");   // no "Find the salinity / salt" labels
+  if (S.mode === "timed"){ $("eqConc").className = "eq"; $("eqSalt").className = "eq"; return; }
+  const kind = S.mode === "stack" ? "conc" : (S.prob ? S.prob.kind : "conc");
+  $("eqConc").className = "eq " + (kind === "conc" ? "on" : "off");
+  $("eqSalt").className = "eq " + (kind === "salt" ? "on" : "off");
+}
+function newProblem(custom){
+  S.run++; S.busy = false; S.boost = 1;
+  S.prob = custom || makeProblem(chooseKind());
+  // Picture or word problem? Test = random; Practice follows the switch.
+  S.prob.word = S.mode === "timed" ? Math.random() < 0.5
+              : S.view === "word" ? true : S.view === "mix" ? Math.random() < 0.5 : false;
+  if (S.prob.word) S.prob.story = makeStory(S.prob);
+  S.hintOn = false; S.showUsed = false; S.lastResult = null;
+  $("predUnitSel").value = ""; $("predUnitSel").disabled = false;
+  $("result").hidden = true; $("hintBox").hidden = true;
+  $("predMsg").textContent = ""; $("pred").value = "";
+  drawProblem();
+  renderText();
+  syncEq();
+  bmsg("");
+  const practice = S.mode === "practice";
+  setWordView(S.prob.word);
+  $("buildBox").hidden = !practice || S.prob.word;
+  if (practice && !Bd.done && !S.prob.word){
+    S.phase = "build";
+    setAnswerEnabled(false);
+  } else {
+    if (practice && !S.prob.word) bmsg(t().nothing, "good");
+    enterPredict();
+  }
+  if (Bd.done) renderHighlight(false);
+  syncButtons();
+  playAsWritten();
+  S.lastSay = say();
+  if (S.mode === "timed") $("pred").focus();
+}
+function enterPredict(){
+  S.phase = "predict";
+  setAnswerEnabled(true);
+  if (S.mode === "practice") $("pred").focus({ preventScroll:true });
+}
+function setAnswerEnabled(on){
+  $("pred").disabled = !on; $("checkBtn").disabled = !on;
+  $("waitNote").hidden = false;
+  $("waitNote").textContent = S.mode === "timed" ? t().timedNote : (on ? "" : t().buildFirst);
+  if (on && S.mode === "practice") $("waitNote").hidden = true;
+}
+function syncButtons(){
+  const fill = Gm.fill, building = S.phase === "build" || (S.phase === "predict" && S.mode === "practice");
+  $("bAdd").hidden = !fill; $("bTop").hidden = !fill; $("bCut").hidden = fill;
+  const lock = !building || Bd.done;
+  $("bAdd").disabled = lock; $("bTop").disabled = lock; $("bCut").disabled = lock;
+  $("bUndo").disabled = !building || (fill ? (Bd.k <= 1 && !Bd.part) : Bd.k === 0);
+  $("showBtn").hidden = S.mode !== "practice" || (S.prob && S.prob.word);
+  $("showBtn").disabled = Bd.done || S.phase === "result";
+  $("hintBtn").disabled = S.phase === "result" || S.phase === "animating";
+  $("hintBtn").hidden = S.mode === "timed";      // the hint would tell them what to find
+  if (S.prob && S.prob.V === 1000) $("buildBox").querySelector(".row").hidden = true;
+  else $("buildBox").querySelector(".row").hidden = false;
+}
+function say(){
+  const p = S.prob;
+  if (p.word) return `${$("probText").textContent} ${$("question").textContent}`;
+  if (S.mode === "timed") return `${$("probText").textContent} ${t().qTimed}`;
+  return p.kind === "conc" ? t().sayConc(fmt(p.g), fmt(p.V)) : t().saySalt(fmt(p.C), fmt(p.V));
+}
+// All text that depends on the problem + language
+function renderText(){
+  const p = S.prob, L = t();
+  if (!p) return;
+  if (p.word) $("probText").textContent = storyText(p);
+  else $("probText").innerHTML = p.kind === "conc" ? L.problemConc(fmt(p.g), fmt(p.V)) : L.problemSalt(fmt(p.C), fmt(p.V));
+  // Timed test: never say what to find — students work that out from the problem
+  $("question").textContent = S.mode === "timed" ? L.qTimed : (p.kind === "conc" ? L.qConc() : L.qSalt(fmt(p.V)));
+  $("predUnit").textContent = p.kind === "conc" ? L.perL : L.gUnit;
+  const timed = S.mode === "timed";
+  $("predUnit").hidden = timed; $("predUnitSel").hidden = !timed;
+  // build tip + button labels
+  const target = Gm.cap, u = fmt(Gm.unit);
+  const each = p.kind === "conc" ? p.g : p.C;   // salt in one copy
+  $("buildTip").textContent = Gm.fill ? L.tipFill(fmt(target), u, fmt(each)) : L.tipCut(u);
+  $("bAdd").textContent = L.add(u);
+  $("bCut").textContent = L.cut(u);
+  updateReadout(S.phase === "result");
+}
+
+function hintText(){
+  const p = S.prob, L = t(), n = Gm.n;
+  let lead;
+  if (p.V === 1000) lead = L.hintEqual;
+  else if (p.kind === "conc") lead = p.V < 1000 ? L.hintConcSmall(fmt(p.V), approx(n)) : L.hintConcLarge(fmt(p.V), approx(n));
+  else lead = p.V < 1000 ? L.hintSaltSmall(fmt(p.V), approx(n)) : L.hintSaltLarge(fmt(p.V), approx(n));
+  const frame = p.kind === "conc" ? `${fmt(p.g)} g / ${fmt(p.V)} mL = ? g / 1000 mL`
+                                  : `${fmt(p.C)} g / 1000 mL = ? g / ${fmt(p.V)} mL`;
+  return { lead, frame };
+}
+function showHint(){
+  const h = hintText(), box = $("hintBox");
+  box.innerHTML = "";
+  box.append(h.lead);
+  const s = document.createElement("span"); s.className = "frame"; s.textContent = h.frame;
+  box.appendChild(s);
+  box.hidden = false; S.hintOn = true;
+  S.lastSay = h.lead;
+}
+async function showMe(){
+  if (S.mode !== "practice" || Bd.done || S.busy) return;
+  S.showUsed = true;
+  $("showBtn").disabled = true;
+  await autoBuild();
+}
+
+async function check(e){
+  e.preventDefault();
+  if (S.phase !== "predict") return;
+  const raw = $("pred").value.trim().replace(",", ".");
+  const guess = Number(raw);
+  if (raw === "" || !isFinite(guess)){ $("predMsg").textContent = t().needNum; return; }
+  // Timed test: the unit is part of the answer
+  const timed = S.mode === "timed", unit = $("predUnitSel").value;
+  const rightUnit = S.prob.kind === "conc" ? "ppt" : "g";
+  if (timed && !unit){ $("predMsg").textContent = t().needUnit; $("predUnitSel").focus(); return; }
+  $("predMsg").textContent = "";
+  $("predUnitSel").disabled = true;
+  S.phase = "animating";
+  $("pred").disabled = true; $("checkBtn").disabled = true;
+  syncButtons();
+
+  const a = S.prob.ans;
+  // correct = matches after rounding (1%, or 0.05 for tiny answers); close = within 10%
+  const err = Math.abs(guess - a);
+  let verdict = err <= Math.max(0.051, a * 0.01) ? "good" : err <= a * 0.10 ? "close" : "bad";
+  // wrong unit = no points, even if the number is right
+  if (timed && unit !== rightUnit) verdict = verdict === "good" ? "unit" : "bad";
+
+  const myRun = S.run;
+  if (S.prob.word) setWordView(false);                         // word problem: now show the picture
+  if (!Bd.done){ await sleep(150); await autoBuild(); }      // timed test / word problem: watch it scale now
+  if (S.run !== myRun) return;
+
+  // scoring: 10 points + streak bonus; a hint or "Show me" halves it; close = 3
+  S.attempts++;
+  let pts = 0;
+  if (verdict === "good"){
+    pts = 10 + 2 * Math.min(S.streak, 10);
+    if (S.hintOn || S.showUsed) pts = Math.ceil(pts / 2);
+    S.streak++; S.correct++;
+  } else {
+    if (verdict === "close") pts = 3;
+    S.streak = 0;
+  }
+  S.score += pts;
+  S.level = Math.min(3, 1 + Math.floor(S.correct / 5));
+  if (S.score > S.best){ S.best = S.score; try { localStorage.setItem("ssu-best", S.best); } catch(e){} }
+  updateStats(pts > 0);
+  S.phase = "result";
+  S.lastResult = { verdict, guess, pts, unit: timed ? unit : "" };
+  renderHighlight(true);
+  updateReadout(true);
+  showResult();
+  syncButtons();
+
+  if (S.mode === "timed"){
+    await sleep(1800);
+    if (S.run === myRun && S.mode === "timed" && S.timeLeft > 0) newProblem();
+  } else {
+    $("nextBtn").focus();
+  }
+}
+
+function showResult(){
+  const { verdict, guess, pts, unit } = S.lastResult, p = S.prob, L = t();
+  const box = $("result");
+  box.className = "result " + (verdict === "unit" ? "close" : verdict);
+  const rightUnit = p.kind === "conc" ? "ppt" : "g";
+  const unitNote = unit && unit !== rightUnit ? " " + L.unitWas(rightUnit) : "";
+  $("verdict").textContent = `${L[verdict]} ${L.pts(pts)}`.trim() + unitNote;
+  const pre = inexact(p.ans) ? "≈ " : "";
+  $("answerLine").textContent = pre + (p.kind === "conc" ? L.answerConc(fmt(p.ans)) : L.answerSalt(fmt(p.ans), fmt(p.V)));
+  // worked steps
+  let steps;
+  const n = approx(Gm.n);
+  if (p.V === 1000){ steps = [L.stepsEqual(fmt(p.ans))]; if (p.kind === "conc") steps.push(L.pptStep(fmt(p.ans))); }
+  else if (p.kind === "conc"){
+    steps = p.V < 1000
+      ? [L.sMul(`1000 ÷ ${fmt(p.V)}`, n), `${fmt(p.g)} g × ${n} = ${fmt(p.ans)} g`]
+      : [L.sDiv(`${fmt(p.V)} ÷ 1000`, n), `${fmt(p.g)} g ÷ ${n} = ${fmt(p.ans)} g`];
+    steps.push(L.pptStep(fmt(p.ans)));    // salinity answers are reported in ppt
+  } else {
+    steps = p.V < 1000
+      ? [L.sDiv(`1000 ÷ ${fmt(p.V)}`, n), `${fmt(p.C)} g ÷ ${n} = ${fmt(p.ans)} g`]
+      : [L.sMul(`${fmt(p.V)} ÷ 1000`, n), `${fmt(p.C)} g × ${n} = ${fmt(p.ans)} g`];
+  }
+  const ol = $("steps"); ol.innerHTML = "";
+  steps.forEach(s => { const li = document.createElement("li"); li.textContent = s; ol.appendChild(li); });
+  $("youSaid").textContent = L.youSaid(fmt(guess) + (unit ? " " + unit : ""));
+  $("satNote").hidden = p.C <= SAT; $("satNote").textContent = L.sat;
+  $("nextBtn").hidden = S.mode === "timed";
+  box.hidden = false;
+  S.lastSay = `${L[verdict]} ${$("answerLine").textContent}. ${steps.join(". ")}.`;
+}
+
+function updateStats(pop){
+  $("score").textContent = S.score;
+  $("streak").textContent = S.streak;
+  $("level").textContent = S.level;
+  $("best").textContent = S.best;
+  if (pop){ const s = $("stScore"); s.classList.remove("pop"); void s.offsetWidth; s.classList.add("pop"); }
+}
+
+// ---------- Modes ----------
+function setMode(mode){
+  S.mode = mode;
+  $("mPractice").setAttribute("aria-pressed", mode === "practice");
+  $("mTimed").setAttribute("aria-pressed", mode === "timed");
+  $("mStack").setAttribute("aria-pressed", mode === "stack");
+  clearInterval(S.timerId);
+  // Layer stack has its own screen
+  const stack = mode === "stack";
+  $("mainGrid").hidden = stack; $("stackView").hidden = !stack;
+  syncToolRow();   // problem-type switch: Practice only · picture/word switch: Practice + Layer stack
+  // the same calculator follows the student between screens
+  $(stack ? "calcSlotStack" : "calcSlotMain").appendChild($("calcBox"));
+  $(stack ? "eqSlotStack" : "eqSlotMain").appendChild($("eqBox"));
+  $("calcUse").hidden = stack;          // "Put in answer box" only where there is an answer box
+  $("overlay").hidden = true;
+  S.score = 0; S.streak = 0; S.correct = 0; S.attempts = 0; S.level = 1;
+  $("ownDetails").hidden = mode === "timed";
+  if (mode === "timed"){
+    S.speed = 2.5; S.timeLeft = TIMED_SECONDS;
+    $("timerBox").hidden = false; $("timer").textContent = S.timeLeft;
+    // the clock only runs while the student is thinking, not during animations
+    S.timerId = setInterval(() => {
+      if (S.phase !== "predict") return;
+      S.timeLeft--; $("timer").textContent = S.timeLeft;
+      if (S.timeLeft <= 0) endTimed();
+    }, 1000);
+  } else {
+    S.speed = 1; $("timerBox").hidden = true;
+  }
+  updateStats(false);
+  if (stack){ S.run++; S.phase = "idle"; syncEq(); newStack(); return; }
+  newProblem();
+}
+function setType(type){
+  S.ptype = type;
+  [["tConc","conc"],["tSalt","salt"],["tMix","mix"]].forEach(([id, v]) => $(id).setAttribute("aria-pressed", v === type));
+  if (type !== "mix") $("ownKind").value = type;
+  syncOwnForm();
+  if (S.mode === "timed") setMode("timed"); else newProblem();
+}
+function endTimed(){
+  clearInterval(S.timerId);
+  S.phase = "idle"; S.run++;
+  $("ovScore").textContent = S.score;
+  $("ovText").textContent = t().summary(S.correct, S.attempts, S.best);
+  $("overlay").hidden = false;
+  $("ovAgain").focus();
+  S.lastSay = `${t().timeUp} ${S.score}. ${t().summary(S.correct, S.attempts, S.best)}`;
+}
+
+// ---------- Language + read aloud ----------
+function setLang(l){
+  S.lang = l;
+  document.documentElement.lang = l;
+  [["lEn","en"],["lEs","es"],["lVi","vi"]].forEach(([id, v]) => $(id).setAttribute("aria-pressed", v === l));
+  document.querySelectorAll("[data-t]").forEach(n => {
+    const v = T[l][n.dataset.t];
+    if (typeof v === "string") n.textContent = v;
+  });
+  document.title = T[l].title;
+  $("aboutList").innerHTML = "";
+  T[l].about.forEach(s => { const li = document.createElement("li"); li.textContent = s; $("aboutList").appendChild(li); });
+  syncOwnForm();
+  if (S.prob){
+    renderText();
+    if (S.phase === "build"){ setAnswerEnabled(false); S.lastSay = say(); }
+    else if (S.phase === "predict"){ setAnswerEnabled(true); S.lastSay = say(); }
+    if (S.mode === "timed") $("waitNote").textContent = t().timedNote;
+    if (S.hintOn) showHint();
+    if (S.lastResult) showResult();
+    bmsg("");
+  }
+  if (typeof calcLabels === "function"){ calcLabels(); if (CALC.justDone && !isFinite(Number(CALC.expr || "x"))) calcRender(t().calcErr); }
+  if (S.mode === "stack" && ST.set.length){ renderStackText(); syncStack(); if (ST.hint) stackHint(); if (!ST.settled) S.lastSay = stackSay(); }
+  try { localStorage.setItem("ssu-lang", l); } catch(e){}
+}
+function speak(){
+  if (!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(S.lastSay || $("probText").textContent);
+  u.lang = VOICE[S.lang];
+  const v = speechSynthesis.getVoices().find(v => v.lang.replace("_","-").startsWith(S.lang));
+  if (v) u.voice = v;
+  u.rate = 0.9;
+  speechSynthesis.speak(u);
+}
+
+// ---------- "Use my own numbers" ----------
+function syncOwnForm(){
+  const salt = $("ownKind").value === "salt", L = t();
+  $("ownALabel").textContent = salt ? L.cLabel : L.gLabel;
+  $("ownAUnit").textContent = salt ? L.perL : "g";
+  $("ownA").placeholder = salt ? "ppt" : "g";
+}
+$("ownKind").addEventListener("change", syncOwnForm);
+$("ownForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const kind = $("ownKind").value;
+  const a = Number($("ownA").value.replace(",", ".")), V = Number($("ownV").value.replace(",", "."));
+  const okV = V >= 10 && V <= 10000;
+  if (kind === "conc" && !(a >= 0.1 && a <= 1000 && okV)){ $("ownMsg").textContent = t().ownBadConc; return; }
+  if (kind === "salt" && !(a >= 0.1 && a <= 400 && okV)){ $("ownMsg").textContent = t().ownBadSalt; return; }
+  $("ownMsg").textContent = "";
+  const nums = kind === "conc" ? { V, g:a, C:a * 1000 / V } : { V, C:a, g:a * V / 1000 };
+  newProblem(finishProblem(kind, nums));
+});
+
+// =====================================================================
+// WORD PROBLEMS — the same numbers as a short story, with no picture.
+// Settings are matched to the salinity so every story is realistic:
+//   < 0.5 ppt creek · 0.5–30 bay marsh (brackish) · 32–35.5 Monterey Bay
+//   40–60 tide pool on a hot day · > 60 South Bay salt evaporation pond
+//   (salinities between those bands only get the lab story)
+// Stories only state facts. In Practice the question underneath says what to
+// find; in the Timed test students must work that out themselves.
+// =====================================================================
+const NAMES = ["Maya", "Luis", "Linh", "Diego", "Ana", "Minh", "Priya", "Jordan", "Sofia", "Bao"];
+const STORY = {
+  en:{
+    places:{ creek:"a creek in the Santa Cruz Mountains", marsh:"a marsh at the edge of San Francisco Bay", bay:"Monterey Bay", pool:"a tide pool on a hot afternoon", pond:"a salt evaporation pond in the South Bay" },
+    conc:{
+      lab:(n,g,v)=>`For a lab, ${n} dissolves ${g} g of salt in ${v} mL of water.`,
+      hatch:(n,g,v)=>`${n} is setting up a brine shrimp hatchery and stirs ${g} g of salt into ${v} mL of water.`,
+      aqua:(n,g,v)=>`${n} works at an aquarium and mixes ${g} g of sea salt into ${v} mL of fresh water.`,
+      sample:(n,g,v,p)=>`${n} collects ${v} mL of water from ${p} and lets it all evaporate. ${g} g of salt is left in the dish.`
+    },
+    salt:{
+      lab:(n,c,v)=>`${n} made salt water with a salinity of ${c} ppt and pours ${v} mL of it into a beaker.`,
+      aqua:(n,c,v)=>`An aquarium tank is kept at a salinity of ${c} ppt. ${n} scoops out ${v} mL of the tank water.`,
+      sample:(n,c,v,p)=>`${n} fills a bottle with ${v} mL of water from ${p}. The salinity there is ${c} ppt.`
+    },
+    stack:(n,list)=>`${n} is building a layered salt-water column for the science fair. ${list} Each solution gets a different food coloring.`,
+    stackItem:(id,col,g,v)=>`Solution ${id} (${col.toLowerCase()}) has ${g} g of salt in ${v} mL of water.`
+  },
+  es:{
+    places:{ creek:"un arroyo de las montañas de Santa Cruz", marsh:"un pantano a la orilla de la Bahía de San Francisco", bay:"la Bahía de Monterey", pool:"una poza de marea en una tarde calurosa", pond:"un estanque de evaporación de sal en el South Bay" },
+    conc:{
+      lab:(n,g,v)=>`Para un laboratorio, ${n} disuelve ${g} g de sal en ${v} mL de agua.`,
+      hatch:(n,g,v)=>`${n} está preparando un criadero de artemias y mezcla ${g} g de sal en ${v} mL de agua.`,
+      aqua:(n,g,v)=>`${n} trabaja en un acuario y mezcla ${g} g de sal marina en ${v} mL de agua dulce.`,
+      sample:(n,g,v,p)=>`${n} recoge ${v} mL de agua de ${p} y deja que se evapore toda. Quedan ${g} g de sal en el plato.`
+    },
+    salt:{
+      lab:(n,c,v)=>`${n} preparó agua salada con una salinidad de ${c} ppt y vierte ${v} mL en un vaso de precipitados.`,
+      aqua:(n,c,v)=>`Un tanque de acuario se mantiene a una salinidad de ${c} ppt. ${n} saca ${v} mL del agua del tanque.`,
+      sample:(n,c,v,p)=>`${n} llena una botella con ${v} mL de agua de ${p}. Allí la salinidad es de ${c} ppt.`
+    },
+    stack:(n,list)=>`${n} está haciendo una columna de capas de agua salada para la feria de ciencias. ${list} Cada solución tiene un colorante diferente.`,
+    stackItem:(id,col,g,v)=>`La solución ${id} (${col.toLowerCase()}) tiene ${g} g de sal en ${v} mL de agua.`
+  },
+  vi:{
+    places:{ creek:"một con suối ở dãy núi Santa Cruz", marsh:"một đầm lầy ven Vịnh San Francisco", bay:"Vịnh Monterey", pool:"một vũng thủy triều vào buổi chiều nóng", pond:"một ao bay hơi muối ở South Bay" },
+    conc:{
+      lab:(n,g,v)=>`Trong giờ thí nghiệm, ${n} hòa tan ${g} g muối vào ${v} mL nước.`,
+      hatch:(n,g,v)=>`${n} đang chuẩn bị bể ấp tôm biển (artemia) và khuấy ${g} g muối vào ${v} mL nước.`,
+      aqua:(n,g,v)=>`${n} làm việc ở thủy cung và pha ${g} g muối biển vào ${v} mL nước ngọt.`,
+      sample:(n,g,v,p)=>`${n} lấy ${v} mL nước từ ${p} và để nước bay hơi hết. Còn lại ${g} g muối trong đĩa.`
+    },
+    salt:{
+      lab:(n,c,v)=>`${n} pha nước muối có độ mặn ${c} ppt và rót ${v} mL vào một cốc thủy tinh.`,
+      aqua:(n,c,v)=>`Một bể thủy cung được giữ ở độ mặn ${c} ppt. ${n} múc ra ${v} mL nước trong bể.`,
+      sample:(n,c,v,p)=>`${n} đổ ${v} mL nước lấy từ ${p} vào một cái chai. Độ mặn ở đó là ${c} ppt.`
+    },
+    stack:(n,list)=>`${n} đang làm một cột nước muối nhiều lớp cho hội chợ khoa học. ${list} Mỗi dung dịch được nhuộm một màu khác nhau.`,
+    stackItem:(id,col,g,v)=>`Dung dịch ${id} (${col.toLowerCase()}) có ${g} g muối trong ${v} mL nước.`
+  }
+};
+// Which real place fits this salinity?
+function placeFor(c){
+  if (c < 0.5) return "creek";
+  if (c < 30) return "marsh";
+  if (c >= 32 && c <= 35.5) return "bay";     // Monterey Bay surface water is about 33–34 ppt
+  if (c > 40 && c <= 60) return "pool";
+  if (c > 60) return "pond";
+  return null;                                 // no good real place → lab story only
+}
+// Pick a story template that is realistic for these numbers.
+function makeStory(p){
+  const c = p.C, opts = ["lab"];
+  if (placeFor(c)) opts.push("sample");
+  if (p.kind === "conc" && c >= 20 && c <= 40) opts.push("hatch");   // brine shrimp hatch in roughly seawater-strength water
+  if (c >= 30 && c <= 36) opts.push("aqua");                          // marine aquariums run near seawater (~35)
+  return { tpl: pick(opts), name: pick(NAMES), place: placeFor(c) };
+}
+function storyText(p){
+  const L = STORY[S.lang], st = p.story;
+  const base = p.kind === "conc"
+    ? L.conc[st.tpl](st.name, fmt(p.g), fmt(p.V), L.places[st.place])
+    : L.salt[st.tpl](st.name, fmt(p.C), fmt(p.V), L.places[st.place]);
+  return base;
+}
+
+// Picture / word problem view: hide or show everything that draws the problem.
+function setWordView(hide){
+  $("phaseRow").hidden = hide; $("stageWrap").hidden = hide;
+  $("wordNote").hidden = !hide;
+  if (hide){ $("buildBox").hidden = true; document.querySelector(".readout").hidden = true; }
+}
+function syncToolRow(){
+  const m = S.mode;
+  $("typeSeg").hidden = m !== "practice";
+  $("viewSeg").hidden = m === "timed";          // test = random picture / word
+  [["vPic","pic"],["vWord","word"],["vMix","mix"]].forEach(([id, v]) => $(id).setAttribute("aria-pressed", S.view === v));
+}
+function setView(v){
+  S.view = v;
+  try { localStorage.setItem("ssu-view", v); } catch(e){}
+  syncToolRow();
+  if (S.mode === "stack") newStack(); else newProblem();
+}
+
+// =====================================================================
+// LAYER STACK
+// Four salt solutions, each dyed a different color. Students tap them in the
+// order they would pour them into a tall column (first tap = bottom layer).
+// "Let it settle" then lets physics fix any mistakes: a saltier (denser)
+// layer sitting on a less salty one sinks through it.
+// Every solution is poured in the SAME amount, so only salinity matters.
+// =====================================================================
+Object.assign(T.en, {
+  viewPic:"Picture", viewWord:"Word problem", viewMix:"Mixed",
+  wordNote:"Word problem: no picture yet. The picture appears after you check your answer.",
+  eqGSalt:"g of salt", eq1000:"1000 mL H₂O", eqSaltIn:"# of mL H₂O the salt is in", eqSalinity:"Salinity", eqYouHave:"# of mL of H₂O you have",
+  calcName:"Calculator", calcErr:"Error", calcUse:"Put in answer box", calcKeys:{divide:"divide",times:"times",minus:"minus",plus:"plus",equals:"equals",del:"delete",clear:"clear"},
+  stackMode:"Layer stack", stackTitle:"Stack the layers", settle:"Let it settle", newSet:"New set",
+  stackIntro:"You made four salt-water solutions and dyed each one a different color. You will pour the same amount of each into a tall column. Tap them in the order you would pour them, starting with the bottom layer.",
+  stackHint:"Saltier water is denser, so it sinks to the bottom. Find the ppt of each solution first: scale each one to 1000 mL.",
+  recipe:(g,v)=>`${g} g salt in ${v} mL`,
+  dyes:{red:"Red",yellow:"Yellow",green:"Green",blue:"Blue"},
+  pourLabel:(id,c,r)=>`Pour ${id}, ${c}: ${r}`,
+  poured:(n)=>`${n} of 4 poured.`, ready:"All 4 are in. Press Let it settle to see what happens.",
+  needAll:"Pour all 4 solutions first.",
+  sink:(a,ac,ap,b,bc,bp)=>`${a} (${ac}, ${ap} ppt) is saltier than ${b} (${bc}, ${bp} ppt), so it is denser and sinks below it.`,
+  perfect:"Perfect stack! Every layer was in the right place.", partial:(n)=>`${n} of 4 layers were in the right place.`,
+  noSink:"Nothing had to move.",
+  calc:(id,c,g,v,p)=>`${id} (${c}): ${g} g ÷ ${v} mL × 1000 = ${p} ppt`,
+  realNote:"In a real column, a layer poured in the wrong place sinks and partly mixes, so the colors get muddy.",
+  colTop:"top", colBottom:"bottom",
+  saySet:(list)=>`Stack the layers. ${list}. Saltier water sinks to the bottom.`
+});
+Object.assign(T.es, {
+  viewPic:"Dibujo", viewWord:"Problema escrito", viewMix:"Mezclado",
+  wordNote:"Problema escrito: todavía no hay dibujo. El dibujo aparece después de revisar tu respuesta.",
+  eqGSalt:"g de sal", eq1000:"1000 mL H₂O", eqSaltIn:"# de mL H₂O donde está la sal", eqSalinity:"Salinidad", eqYouHave:"# de mL de H₂O que tienes",
+  calcName:"Calculadora", calcErr:"Error", calcUse:"Poner en la respuesta", calcKeys:{divide:"dividir",times:"por",minus:"menos",plus:"más",equals:"igual",del:"borrar",clear:"limpiar"},
+  stackMode:"Capas", stackTitle:"Apila las capas", settle:"Dejar asentar", newSet:"Nuevo grupo",
+  stackIntro:"Preparaste cuatro soluciones de agua salada y pintaste cada una de un color diferente. Vas a verter la misma cantidad de cada una en una columna alta. Tócalas en el orden en que las verterías, empezando por la capa de abajo.",
+  stackHint:"El agua más salada es más densa, así que se hunde al fondo. Primero encuentra las ppt de cada solución: lleva cada una a 1000 mL.",
+  recipe:(g,v)=>`${g} g de sal en ${v} mL`,
+  dyes:{red:"Rojo",yellow:"Amarillo",green:"Verde",blue:"Azul"},
+  pourLabel:(id,c,r)=>`Verter ${id}, ${c}: ${r}`,
+  poured:(n)=>`${n} de 4 vertidas.`, ready:"Ya están las 4. Presiona Dejar asentar para ver qué pasa.",
+  needAll:"Primero vierte las 4 soluciones.",
+  sink:(a,ac,ap,b,bc,bp)=>`${a} (${ac}, ${ap} ppt) es más salada que ${b} (${bc}, ${bp} ppt), así que es más densa y se hunde debajo.`,
+  perfect:"¡Columna perfecta! Cada capa estaba en su lugar.", partial:(n)=>`${n} de 4 capas estaban en su lugar.`,
+  noSink:"Nada tuvo que moverse.",
+  calc:(id,c,g,v,p)=>`${id} (${c}): ${g} g ÷ ${v} mL × 1000 = ${p} ppt`,
+  realNote:"En una columna real, una capa vertida en el lugar equivocado se hunde y se mezcla en parte, y los colores se ven turbios.",
+  colTop:"arriba", colBottom:"abajo",
+  saySet:(list)=>`Apila las capas. ${list}. El agua más salada se hunde al fondo.`
+});
+Object.assign(T.vi, {
+  viewPic:"Hình vẽ", viewWord:"Bài toán chữ", viewMix:"Trộn lẫn",
+  wordNote:"Bài toán chữ: chưa có hình. Hình sẽ hiện ra sau khi bạn kiểm tra đáp án.",
+  eqGSalt:"g muối", eq1000:"1000 mL H₂O", eqSaltIn:"số mL H₂O chứa muối", eqSalinity:"Độ mặn", eqYouHave:"số mL H₂O bạn có",
+  calcName:"Máy tính", calcErr:"Lỗi", calcUse:"Đưa vào ô trả lời", calcKeys:{divide:"chia",times:"nhân",minus:"trừ",plus:"cộng",equals:"bằng",del:"xóa",clear:"xóa hết"},
+  stackMode:"Xếp lớp", stackTitle:"Xếp các lớp nước", settle:"Để lắng xuống", newSet:"Bộ mới",
+  stackIntro:"Bạn đã pha bốn dung dịch nước muối và nhuộm mỗi dung dịch một màu khác nhau. Bạn sẽ rót cùng một lượng của mỗi dung dịch vào một ống cao. Hãy chạm vào chúng theo thứ tự bạn sẽ rót, bắt đầu từ lớp dưới cùng.",
+  stackHint:"Nước mặn hơn thì đặc hơn (khối lượng riêng lớn hơn), nên chìm xuống đáy. Trước tiên hãy tìm ppt của mỗi dung dịch: đổi mỗi dung dịch về 1000 mL.",
+  recipe:(g,v)=>`${g} g muối trong ${v} mL`,
+  dyes:{red:"Đỏ",yellow:"Vàng",green:"Xanh lá",blue:"Xanh dương"},
+  pourLabel:(id,c,r)=>`Rót ${id}, ${c}: ${r}`,
+  poured:(n)=>`Đã rót ${n} trên 4.`, ready:"Đã rót đủ 4. Bấm Để lắng xuống để xem điều gì xảy ra.",
+  needAll:"Hãy rót cả 4 dung dịch trước.",
+  sink:(a,ac,ap,b,bc,bp)=>`${a} (${ac}, ${ap} ppt) mặn hơn ${b} (${bc}, ${bp} ppt), nên đặc hơn và chìm xuống dưới.`,
+  perfect:"Xếp hoàn hảo! Mọi lớp đều đúng chỗ.", partial:(n)=>`${n} trên 4 lớp đúng chỗ.`,
+  noSink:"Không lớp nào phải di chuyển.",
+  calc:(id,c,g,v,p)=>`${id} (${c}): ${g} g ÷ ${v} mL × 1000 = ${p} ppt`,
+  realNote:"Trong ống thật, lớp rót sai chỗ sẽ chìm xuống và trộn lẫn một phần, nên màu bị đục.",
+  colTop:"trên", colBottom:"dưới",
+  saySet:(list)=>`Xếp các lớp nước. ${list}. Nước mặn hơn chìm xuống đáy.`
+});
+
+const DYES = ["red", "yellow", "green", "blue"];
+const ST = { set:[], order:[], settled:false, busy:false, hint:false, groups:{} };
+const COL = { X:60, W:120, TOP:40, BOT:400 };
+COL.LH = (COL.BOT - COL.TOP - 16) / 4;           // height of one layer
+const layerY = i => COL.BOT - (i + 1) * COL.LH;   // i = 0 is the bottom
+
+// Four solutions with clearly different salinities. The grams are chosen so
+// that "most salt" is NOT always "saltiest" — students have to compute ppt.
+function makeStackSet(){
+  const pool = [3,5,8,10,12,15,18,20,25,30,35,40,45,50,60,75,90,120];
+  const vols = [100,125,200,250,400,500,750,1250,1500,2000,2500,4000];
+  for (let tries = 0; tries < 2000; tries++){
+    const ppts = [];
+    while (ppts.length < 4){ const p = pick(pool); if (!ppts.includes(p)) ppts.push(p); }
+    const sorted = [...ppts].sort((a, b) => a - b);
+    if (sorted.some((p, i) => i && (p < sorted[i-1] * 1.2 || p - sorted[i-1] < 3))) continue;
+    const used = [], sols = [];
+    for (const p of ppts){
+      const V = pick(vols.filter(v => !used.includes(v)));
+      const g = p * V / 1000;
+      if (Math.abs(g * 100 - Math.round(g * 100)) > 1e-6 || g < 0.5) break;
+      used.push(V); sols.push({ g: Math.round(g * 100) / 100, V, ppt: p });
+    }
+    if (sols.length < 4) continue;
+    // at least one pair where more grams ≠ saltier
+    const tricky = sols.some(a => sols.some(b => a.g > b.g && a.ppt < b.ppt));
+    if (!tricky) continue;
+    const dyes = [...DYES].sort(() => Math.random() - .5);
+    return sols.map((s, i) => ({ ...s, id: "ABCD"[i], dye: dyes[i] }));
+  }
+  return [
+    { id:"A", dye:"red",    g:12,  V:400,  ppt:30 },
+    { id:"B", dye:"yellow", g:20,  V:2000, ppt:10 },
+    { id:"C", dye:"green",  g:6,   V:100,  ppt:60 },
+    { id:"D", dye:"blue",   g:4,   V:250,  ppt:16 }
+  ];
+}
+const solById = id => ST.set.find(s => s.id === id);
+const dyeName = s => t().dyes[s.dye];
+
+function newStack(){
+  S.run++;
+  ST.set = makeStackSet(); ST.order = []; ST.settled = false; ST.busy = false; ST.hint = false;
+  ST.word = S.view === "word" || (S.view === "mix" && Math.random() < 0.5);
+  ST.name = pick(NAMES);
+  $("stResult").hidden = true; $("stHintBox").hidden = true;
+  drawColumn(); renderStackText(); syncStack();
+  S.lastSay = stackSay();
+}
+function stackStoryText(){
+  const L = STORY[S.lang];
+  return L.stack(ST.name, ST.set.map(s => L.stackItem(s.id, dyeName(s), fmt(s.g), fmt(s.V))).join(" "));
+}
+function stackSay(){
+  if (ST.word) return `${stackStoryText()} ${t().stackIntro}`;
+  const list = ST.set.map(s => `${s.id}, ${dyeName(s)}: ${t().recipe(fmt(s.g), fmt(s.V))}`).join(". ");
+  return t().saySet(list);
+}
+
+// Source beakers (buttons)
+function renderStackText(){
+  const L = t();
+  $("stackIntro").textContent = L.stackIntro;
+  // word version: the recipes are only in the story, not on the beakers
+  $("stackStory").hidden = !ST.word;
+  if (ST.word) $("stackStory").textContent = stackStoryText();
+  const box = $("stackSources"); box.innerHTML = "";
+  ST.set.forEach(s => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "src"; b.id = "src" + s.id;
+    const poured = ST.order.includes(s.id);
+    b.disabled = poured || ST.settled;
+    const recipe = ST.word ? "" : L.recipe(fmt(s.g), fmt(s.V));
+    b.setAttribute("aria-label", ST.word ? `${s.id}, ${dyeName(s)}` : L.pourLabel(s.id, dyeName(s), recipe));
+    b.innerHTML = `<svg viewBox="0 0 44 56" aria-hidden="true">
+        <rect x="5" y="${poured ? 50 : 16}" width="34" height="${poured ? 4 : 38}" fill="var(--dye-${s.dye})"/>
+        <path d="M2 4 L5 6 L5 52 Q5 54 7 54 L37 54 Q39 54 39 52 L39 4" fill="none" stroke="var(--glass)" stroke-width="2.5"/>
+      </svg>
+      <span><b>${s.id} · ${dyeName(s)}</b><span class="num">${recipe}</span></span>`;
+    b.addEventListener("click", () => pourLayer(s.id));
+    box.appendChild(b);
+  });
+  // column side labels
+  const tl = $("colTop"), bl = $("colBottom");
+  if (tl){ tl.textContent = L.colTop; bl.textContent = L.colBottom; }
+  if (ST.settled) showStackResult(ST.lastScore);
+}
+
+// The tall column
+function drawColumn(){
+  const svg = $("stackCol"); svg.innerHTML = "";
+  ST.groups = {};
+  ST.layerG = el("g", {}, svg);
+  ST.fxG = el("g", {}, svg);
+  const { X, W, TOP, BOT } = COL;
+  el("path", { d:`M${X-10} ${TOP-8} L${X} ${TOP} L${X} ${BOT} Q${X} ${BOT+6} ${X+6} ${BOT+6} L${X+W-6} ${BOT+6} Q${X+W} ${BOT+6} ${X+W} ${BOT} L${X+W} ${TOP-8}`, class:"glass" }, svg);
+  const tl = text(X + W + 10, TOP + 14, t().colTop, "lbl", svg, "start"); tl.id = "colTop";
+  const bl = text(X + W + 10, BOT - 4, t().colBottom, "lbl", svg, "start"); bl.id = "colBottom";
+  el("path", { d:`M${X+W+18} ${TOP+24} L${X+W+18} ${BOT-18}`, stroke:"var(--muted)", "stroke-width":1.5, fill:"none" }, svg);
+  el("path", { d:`M${X+W+13} ${BOT-26} L${X+W+18} ${BOT-16} L${X+W+23} ${BOT-26}`, stroke:"var(--muted)", "stroke-width":1.5, fill:"none" }, svg);
+}
+function makeLayer(s, i){
+  const g = el("g", { transform:`translate(${COL.X} ${layerY(i)})` }, ST.layerG);
+  const r = el("rect", { x:0, y:0, width:COL.W, height:COL.LH, fill:`var(--dye-${s.dye})` }, g);
+  // a few salt dots: more dots = saltier (same spacing rule for every layer)
+  const n = Math.round(clamp(s.ppt / 2, 2, 60));
+  for (let k = 0; k < n; k++) el("circle", { cx: 6 + Math.random() * (COL.W - 12), cy: 6 + Math.random() * (COL.LH - 12), r: 2.2, class:"grain", opacity:.85 }, g);
+  const lbl = text(COL.W / 2, COL.LH / 2 + 6, s.id, "layer-lbl", g);
+  ST.groups[s.id] = { g, r, lbl, y: layerY(i) };
+  return ST.groups[s.id];
+}
+const setLayerY = (L, y) => { L.y = y; L.g.setAttribute("transform", `translate(${COL.X} ${y})`); };
+
+async function pourLayer(id){
+  if (ST.busy || ST.settled || ST.order.includes(id)) return;
+  ST.busy = true;
+  const s = solById(id), i = ST.order.length;
+  ST.order.push(id);
+  renderStackText();
+  const L = makeLayer(s, i);
+  // grow from the top of the stack downward, like liquid landing
+  const yEnd = layerY(i);
+  const stream = el("line", { x1:COL.X + COL.W / 2, x2:COL.X + COL.W / 2, y1:0, y2:0, stroke:`var(--dye-${s.dye})`, "stroke-width":7, "stroke-linecap":"round" }, ST.fxG);
+  L.r.setAttribute("height", 0); L.lbl.setAttribute("opacity", 0);
+  [...L.g.querySelectorAll("circle")].forEach(c => c.setAttribute("opacity", 0));
+  await tween(650, e => {
+    const h = COL.LH * e;
+    L.r.setAttribute("y", COL.LH - h); L.r.setAttribute("height", h);
+    stream.setAttribute("y2", yEnd + COL.LH - h);
+    stream.setAttribute("opacity", e < .85 ? 1 : (1 - e) / .15);
+  });
+  stream.remove();
+  L.lbl.setAttribute("opacity", 1);
+  [...L.g.querySelectorAll("circle")].forEach(c => c.setAttribute("opacity", .85));
+  ST.busy = false;
+  syncStack();
+}
+function undoPour(){
+  if (ST.busy || ST.settled || !ST.order.length) return;
+  const id = ST.order.pop();
+  ST.groups[id].g.remove(); delete ST.groups[id];
+  renderStackText(); syncStack();
+}
+function syncStack(){
+  const n = ST.order.length;
+  $("stUndo").disabled = ST.settled || n === 0;
+  $("stSettle").disabled = ST.settled || n < 4;
+  $("stHint").disabled = ST.settled;
+  const m = $("stMsg");
+  m.className = "bmsg" + (n === 4 && !ST.settled ? " good" : "");
+  m.textContent = ST.settled ? "" : n === 4 ? t().ready : t().poured(n);
+}
+
+// Physics: while any SALTIER layer sits on top of a less salty one,
+// it sinks one place (the lighter layer rises). Repeat until sorted.
+async function settle(){
+  if (ST.busy || ST.settled) return;
+  if (ST.order.length < 4){ $("stMsg").textContent = t().needAll; return; }
+  ST.busy = true;
+  const student = [...ST.order];
+  const correct = [...ST.set].sort((a, b) => b.ppt - a.ppt).map(s => s.id);   // bottom → top
+  const right = student.filter((id, i) => id === correct[i]).length;
+  const sinks = [];
+  let moved = true;
+  while (moved){
+    moved = false;
+    for (let i = 0; i < 3; i++){
+      const lower = solById(ST.order[i]), upper = solById(ST.order[i + 1]);
+      if (upper.ppt > lower.ppt){
+        sinks.push({ u: upper.id, l: lower.id });       // text is built later, in the current language
+        const U = ST.groups[upper.id], Lo = ST.groups[lower.id];
+        const uy = U.y, ly = Lo.y;
+        U.g.parentNode.appendChild(U.g);                 // sinking layer drawn in front
+        await tween(900, e => {
+          setLayerY(U, lerp(uy, ly, e));
+          setLayerY(Lo, lerp(ly, uy, e));
+          U.r.setAttribute("opacity", 0.9);
+        });
+        U.r.setAttribute("opacity", 1);
+        ST.order[i] = upper.id; ST.order[i + 1] = lower.id;
+        moved = true;
+        await sleep(150);
+      }
+    }
+  }
+  // reveal ppt on every layer
+  ST.set.forEach(s => { ST.groups[s.id].lbl.textContent = `${s.id} · ${fmt(s.ppt)} ppt`; });
+
+  // scoring
+  S.attempts++;
+  let pts;
+  if (right === 4){
+    pts = 20 + 2 * Math.min(S.streak, 10);
+    if (ST.hint) pts = Math.ceil(pts / 2);
+    S.streak++; S.correct++;
+  } else { pts = 3 * right; S.streak = 0; }
+  S.score += pts;
+  if (S.score > S.best){ S.best = S.score; try { localStorage.setItem("ssu-best", S.best); } catch(e){} }
+  updateStats(pts > 0);
+  ST.settled = true; ST.busy = false;
+  ST.lastScore = { right, pts, sinks };
+  renderStackText();
+  syncStack();
+  $("stNext").focus();
+}
+function showStackResult(sc){
+  const L = t(), { right, pts, sinks } = sc;
+  const box = $("stResult");
+  box.className = "result " + (right === 4 ? "good" : right >= 2 ? "close" : "bad");
+  $("stVerdict").textContent = `${right === 4 ? L.perfect : L.partial(right)} ${L.pts(pts)}`.trim();
+  // sink explanations must be rebuilt in the current language
+  const ul = $("stSinks"); ul.innerHTML = "";
+  const say = ({ u, l }) => { const a = solById(u), b = solById(l);
+    return L.sink(a.id, dyeName(a), fmt(a.ppt), b.id, dyeName(b), fmt(b.ppt)); };
+  (sinks.length ? sinks.map(say) : [L.noSink]).forEach(x => { const li = document.createElement("li"); li.textContent = x; ul.appendChild(li); });
+  const ol = $("stCalc"); ol.innerHTML = "";
+  [...ST.set].sort((a, b) => b.ppt - a.ppt).forEach(s => {
+    const li = document.createElement("li");
+    li.textContent = L.calc(s.id, dyeName(s), fmt(s.g), fmt(s.V), fmt(s.ppt));
+    ol.appendChild(li);
+  });
+  $("stNote").textContent = sinks.length ? L.realNote : "";
+  box.hidden = false;
+  S.lastSay = `${$("stVerdict").textContent} ${[...ul.children].map(li => li.textContent).join(" ")}`;
+}
+function stackHint(){
+  ST.hint = true;
+  $("stHintBox").textContent = t().stackHint;
+  $("stHintBox").hidden = false;
+  S.lastSay = t().stackHint;
+}
+$("stUndo").addEventListener("click", undoPour);
+$("stSettle").addEventListener("click", settle);
+$("stHint").addEventListener("click", stackHint);
+$("stNew").addEventListener("click", newStack);
+$("stNext").addEventListener("click", newStack);
+
+
+// =====================================================================
+// CALCULATOR (Layer stack). A small, safe calculator: no eval().
+// Handles + − × ÷ with the normal order (× ÷ before + −).
+// =====================================================================
+const CALC = { expr:"", justDone:false };
+function calcEval(str){
+  // tokens: numbers and operators; a leading "−" makes a negative number
+  const toks = str.match(/(\d+\.?\d*|\.\d+|[+−×÷])/g) || [];
+  const nums = [], ops = [];
+  let expectNum = true, neg = false;
+  for (const tk of toks){
+    if (expectNum){
+      if (tk === "−"){ neg = !neg; continue; }
+      if ("+×÷".includes(tk)) return NaN;
+      nums.push((neg ? -1 : 1) * Number(tk)); neg = false; expectNum = false;
+    } else { ops.push(tk); expectNum = true; }
+  }
+  if (expectNum) ops.pop();                 // ignore a trailing operator
+  // first pass: × and ÷
+  const n2 = [nums[0]], o2 = [];
+  ops.forEach((op, i) => {
+    const b = nums[i + 1];
+    if (op === "×") n2[n2.length - 1] *= b;
+    else if (op === "÷"){ if (b === 0) n2[n2.length - 1] = NaN; else n2[n2.length - 1] /= b; }
+    else { o2.push(op); n2.push(b); }
+  });
+  // second pass: + and −
+  return o2.reduce((acc, op, i) => op === "+" ? acc + n2[i + 1] : acc - n2[i + 1], n2[0]);
+}
+const calcShow = v => String(Number(v.toFixed(6)));
+function calcRender(val){
+  $("calcExpr").textContent = CALC.justDone ? CALC.shown : (CALC.expr ? " " : " ");
+  $("calcVal").textContent = val !== undefined ? val : (CALC.expr || "0");
+}
+function calcPress(k){
+  const last = CALC.expr.slice(-1), isOp = c => "+−×÷".includes(c);
+  if (k === "use"){
+    const v = CALC.expr ? calcEval(CALC.expr) : NaN;   // works mid-problem too (e.g. "12÷400×1000")
+    if (!isFinite(v) || $("pred").disabled){ return; }
+    $("pred").value = calcShow(v); $("pred").focus();
+    return;
+  }
+  if (k === "clear"){ CALC.expr = ""; CALC.justDone = false; return calcRender(); }
+  if (k === "back"){ if (CALC.justDone){ CALC.expr = ""; CALC.justDone = false; } else CALC.expr = CALC.expr.slice(0, -1); return calcRender(); }
+  if (k === "="){
+    if (!CALC.expr) return;
+    const v = calcEval(CALC.expr);
+    CALC.shown = CALC.expr + " =";
+    CALC.justDone = true;
+    if (!isFinite(v)){ CALC.expr = ""; return calcRender(t().calcErr); }
+    CALC.expr = calcShow(v);
+    return calcRender();
+  }
+  if (isOp(k)){
+    if (CALC.justDone) CALC.justDone = false;              // keep going from the answer
+    if (!CALC.expr && k !== "−") return;
+    if (isOp(last)) CALC.expr = CALC.expr.slice(0, -1);   // swap operator
+    CALC.expr += k; return calcRender();
+  }
+  // digit or "."
+  if (CALC.justDone){ CALC.expr = ""; CALC.justDone = false; }
+  const cur = CALC.expr.split(/[+−×÷]/).pop();
+  if (k === "." && cur.includes(".")) return;
+  if (CALC.expr.length > 40) return;
+  CALC.expr += (k === "." && !cur) ? "0." : k;
+  calcRender();
+}
+function calcLabels(){
+  const K = t().calcKeys;
+  document.querySelectorAll("#calcKeys button").forEach(b => b.setAttribute("aria-label", b.dataset.a ? K[b.dataset.a] : b.textContent));
+}
+$("calcKeys").addEventListener("click", e => { const b = e.target.closest("button"); if (b) calcPress(b.dataset.k); });
+$("calc").addEventListener("keydown", e => {
+  const map = { "*":"×", "x":"×", "/":"÷", "-":"−", "+":"+", "Enter":"=", "=":"=", "Backspace":"back", "Escape":"clear", ".":".", ",":"." };
+  const k = /^\d$/.test(e.key) ? e.key : map[e.key];
+  if (k){ e.preventDefault(); calcPress(k); }
+});
+function setCalcOpen(open){
+  $("calc").hidden = !open;
+  $("calcToggle").setAttribute("aria-expanded", open);
+  try { localStorage.setItem("ssu-calc", open ? "1" : "0"); } catch(e){}
+}
+$("calcToggle").addEventListener("click", () => {
+  const open = $("calc").hidden; setCalcOpen(open); if (open) $("calc").focus();
+});
+try { if (localStorage.getItem("ssu-calc") === "0") setCalcOpen(false); } catch(e){}
+calcLabels(); calcRender();
+
+// ---------- Wire up ----------
+$("predForm").addEventListener("submit", check);
+$("hintBtn").addEventListener("click", showHint);
+$("showBtn").addEventListener("click", showMe);
+$("newBtn").addEventListener("click", () => newProblem());
+$("nextBtn").addEventListener("click", () => newProblem());
+$("bAdd").addEventListener("click", doAdd);
+$("bTop").addEventListener("click", doTop);
+$("bCut").addEventListener("click", doCut);
+$("bUndo").addEventListener("click", doUndo);
+$("mPractice").addEventListener("click", () => setMode("practice"));
+$("mTimed").addEventListener("click", () => setMode("timed"));
+$("mStack").addEventListener("click", () => setMode("stack"));
+$("vPic").addEventListener("click", () => setView("pic"));
+$("vWord").addEventListener("click", () => setView("word"));
+$("vMix").addEventListener("click", () => setView("mix"));
+try {
+  const v = localStorage.getItem("ssu-view"); if (["pic","word","mix"].includes(v)) S.view = v;
+} catch(e){}
+syncToolRow();
+$("tConc").addEventListener("click", () => setType("conc"));
+$("tSalt").addEventListener("click", () => setType("salt"));
+$("tMix").addEventListener("click", () => setType("mix"));
+$("lEn").addEventListener("click", () => setLang("en"));
+$("lEs").addEventListener("click", () => setLang("es"));
+$("lVi").addEventListener("click", () => setLang("vi"));
+$("readBtn").addEventListener("click", speak);
+function setAnim(a){
+  if (S.busy) return;                 // don't switch in the middle of an animation
+  S.anim = a;
+  $("aPour").setAttribute("aria-pressed", a === "pour");
+  $("aBlocks").setAttribute("aria-pressed", a === "blocks");
+  try { localStorage.setItem("ssu-anim", a); } catch(e){}
+  if (S.prob && D.water){ snapRender(); if (Bd.done) renderHighlight(S.phase === "result"); }
+}
+$("aPour").addEventListener("click", () => setAnim("pour"));
+$("aBlocks").addEventListener("click", () => setAnim("blocks"));
+try { if (localStorage.getItem("ssu-anim") === "blocks") S.anim = "blocks"; } catch(e){}
+$("aPour").setAttribute("aria-pressed", S.anim === "pour");
+$("aBlocks").setAttribute("aria-pressed", S.anim === "blocks");
+$("ovAgain").addEventListener("click", () => setMode("timed"));
+$("ovPractice").addEventListener("click", () => setMode("practice"));
+
+let startLang = "en";
+try { const l = localStorage.getItem("ssu-lang"); if (l && T[l]) startLang = l; } catch(e){}
+setLang(startLang);
+updateStats(false);
+// Open on a sample problem so the page shows what it does right away.
+newProblem(finishProblem("conc", { V:250, g:8.75, C:35 }));
+</script>
