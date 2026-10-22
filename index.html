@@ -153,7 +153,8 @@ button{cursor:pointer}
 .wordnote{margin:0;border:2px dashed var(--line);border-radius:12px;padding:14px;color:var(--muted);font-weight:700;text-align:center}
 /* feedback pop-up */
 .pop{max-width:540px;width:100%;max-height:85vh;overflow:auto;text-align:left!important;align-items:stretch!important;border-width:3px}
-.pop.good{border-color:var(--good)} .pop.bad{border-color:var(--bad)}
+.pop.good{border-color:var(--good)} .pop.bad{border-color:var(--bad)} .pop.info{border-color:var(--accent)}
+.pop.info .pop-title{color:var(--accent)}
 .pop-title{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0}
 .pop.good .pop-title{color:var(--good)} .pop.bad .pop-title{color:var(--bad)}
 .pop.good .pop-title::before{content:"✓ "} .pop.bad .pop-title::before{content:"✗ "}
@@ -183,6 +184,7 @@ button{cursor:pointer}
 .navmode.test{border-color:var(--test);color:var(--test)}
 .navmode.test[aria-pressed="true"]{background:var(--test);color:var(--test-ink)}
 .navsec .seg.dim{opacity:.5}
+.mentalnote{flex-basis:100%;font-weight:700}
 .navrow .stats{margin-left:auto}
 .calcbox{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 .calcbox > .btn{align-self:flex-start}
@@ -255,6 +257,7 @@ details li{margin-block:4px}
     <nav class="navsec" id="secSal" aria-labelledby="secSalLbl">
       <span class="navlbl" id="secSalLbl" data-t="secSal">Salinity problems</span>
       <button class="navmode" id="mPractice" aria-pressed="true" data-t="practice">Practice</button>
+      <button class="navmode" id="mMental" aria-pressed="false" data-t="mental">Mental math practice</button>
       <div class="seg" role="group" aria-label="Problem type" id="typeSeg">
         <button id="tConc" aria-pressed="true" data-t="typeConc">Find the salinity</button>
         <button id="tSalt" aria-pressed="false" data-t="typeSalt">Find the salt</button>
@@ -270,6 +273,7 @@ details li{margin-block:4px}
     <nav class="navsec" id="secStack" aria-labelledby="secStackLbl">
       <span class="navlbl" id="secStackLbl" data-t="secStack">Layer stacking</span>
       <button class="navmode" id="mStack" aria-pressed="false" data-t="stackMode">Layer stack</button>
+      <button class="navmode" id="mStackMental" aria-pressed="false" data-t="mental">Mental math practice</button>
       <div class="seg" role="group" aria-label="Picture or word problem" id="viewSeg2">
         <button id="sPic" aria-pressed="true" data-t="viewPic">Picture</button>
         <button id="sWord" aria-pressed="false" data-t="viewWord">Word problem</button>
@@ -343,6 +347,7 @@ details li{margin-block:4px}
       <!-- The two class equations (right side only, as written on the worksheet).
            One shared box; setMode() moves it. The one that fits the current problem is highlighted. -->
       <div class="eqs" id="eqBox">
+        <p class="hint mentalnote" id="mentalNote" hidden data-t="mentalNote">Mental math: easy whole numbers, no calculator.</p>
         <div class="eq" id="eqConc">
           <span class="eq-cap" data-t="typeConc">Find the salinity</span>
           <div class="eq-row">
@@ -404,11 +409,10 @@ details li{margin-block:4px}
       </div>
       </div>
       <div class="row">
-        <button class="btn" id="hintBtn" type="button" data-t="hint">Hint</button>
-        <button class="btn" id="showBtn" type="button" data-t="showMe">Show me</button>
+        <button class="btn" id="showBtn" type="button" data-t="showMe">Show me how</button>
+        <button class="btn" id="revealBtn" type="button" data-t="revealBtn">Show me the answer</button>
         <button class="btn" id="newBtn" type="button" data-t="newP">New problem</button>
       </div>
-      <p class="hint" id="hintBox" hidden></p>
       <div class="result" id="result" hidden>
         <p class="verdict" id="verdict"></p>
         <div id="answerLine" class="num" style="font-size:1.1rem"></div>
@@ -424,7 +428,7 @@ details li{margin-block:4px}
     </section>
   </main>
 
-  <!-- LAYER STACK: which order do four salt solutions stack in? -->
+  <!-- LAYER STACK: which order do three salt solutions stack in? -->
   <section class="stackgrid" id="stackView" hidden>
     <div class="card">
       <p class="problem" data-t="stackTitle">Stack the layers</p>
@@ -440,13 +444,12 @@ details li{margin-block:4px}
       </div>
       <div class="row">
         <button class="btn" id="stUndo" type="button" data-t="undo">Undo</button>
-        <button class="btn primary" id="stSettle" type="button" data-t="settle">Let it settle</button>
+        <button class="btn primary" id="stSettle" type="button" data-t="settle">Check</button>
         <button class="btn primary" id="stSubmit" type="button" data-t="submit" hidden>Submit</button>
-        <button class="btn" id="stHint" type="button" data-t="hint">Hint</button>
+        <button class="btn" id="stReveal" type="button" data-t="revealBtn">Show me the answer</button>
         <button class="btn" id="stNew" type="button" data-t="newSet">New set</button>
       </div>
       <div id="calcSlotStack"></div>
-      <p class="hint" id="stHintBox" hidden></p>
       <p class="bmsg" id="stMsg" aria-live="polite"></p>
       <div class="result" id="stResult" hidden aria-live="polite">
         <p class="verdict" id="stVerdict"></p>
@@ -515,7 +518,7 @@ const T = {
     typeConc:"Find the salinity", typeSalt:"Find the salt", typeMix:"Mix", typeLabel:"Problem type",
     ownTitle:"Use my own numbers", gLabel:"Salt (g)", cLabel:"Salinity (ppt)", vLabel:"Water (mL)", useMine:"Draw it",
     perL:"ppt", gUnit:"g", predLabel:"Your answer",
-    check:"Check", hint:"Hint", showMe:"Show me", newP:"New problem", next:"Next problem",
+    check:"Check", showMe:"Show me how", newP:"New problem", next:"Next problem",
     aboutTitle:"About the numbers", timeUp:"Time's up!", again:"Play again", backPractice:"Back to practice",
     topOff:"Top it off", undo:"Undo", animPour:"Pour & split", animBlocks:"Blocks",
     problemConc:(g,v)=>`<span class="num">${g} g</span> of salt is added to <span class="num">${v} mL</span> of water.`,
@@ -533,13 +536,8 @@ const T = {
     topped:(f)=>`The last copy is only part of a copy: ${f} of a copy.`,
     lastPiece:(r,f)=>`No full portion is left. The last piece is ${r} mL, which is ${f} of a portion.`,
     built:"Built! Now answer the question.", nothing:"It is already 1000 mL, so there is nothing to build. Answer the question.",
-    buildFirst:"Build it first (use the buttons under the picture), then answer. Or press Show me.",
+    buildFirst:"Build it first (use the buttons under the picture), then answer. Or press Show me how.",
     timedNote:"Answer first. Then watch it scale.",
-    hintConcSmall:(v,f)=>`${v} mL is less than 1000 mL. It takes ${f} copies of this water to fill 1000 mL, so multiply the salt by ${f}.`,
-    hintConcLarge:(v,n)=>`${v} mL is more than 1000 mL. It splits into ${n} portions of 1000 mL, so divide the salt by ${n}.`,
-    hintSaltSmall:(v,n)=>`${v} mL is less than 1000 mL. 1000 mL splits into ${n} portions of ${v} mL, so divide the salt by ${n}.`,
-    hintSaltLarge:(v,n)=>`${v} mL is more than 1000 mL. It takes ${n} copies of 1000 mL, so multiply the salt by ${n}.`,
-    hintEqual:"The water is already exactly 1000 mL. The salt does not change.",
     good:"Correct!", close:"Close! Within 10%.", bad:"Not this time.", unit:"Right number, wrong unit.",
     unitLabel:"Unit", unitPick:"unit?", needUnit:"Pick a unit: ppt or g.",
     unitWas:(u)=>`The unit should be ${u}.`,
@@ -569,7 +567,7 @@ const T = {
     typeConc:"Encuentra la salinidad", typeSalt:"Encuentra la sal", typeMix:"Mezcla", typeLabel:"Tipo de problema",
     ownTitle:"Usar mis propios números", gLabel:"Sal (g)", cLabel:"Salinidad (ppt)", vLabel:"Agua (mL)", useMine:"Dibujarlo",
     perL:"ppt (partes por mil)", gUnit:"g", predLabel:"Tu respuesta",
-    check:"Revisar", hint:"Pista", showMe:"Muéstrame", newP:"Nuevo problema", next:"Siguiente problema",
+    check:"Revisar", showMe:"Muéstrame cómo", newP:"Nuevo problema", next:"Siguiente problema",
     aboutTitle:"Sobre los números", timeUp:"¡Se acabó el tiempo!", again:"Jugar otra vez", backPractice:"Volver a práctica",
     topOff:"Llenar hasta arriba", undo:"Deshacer", animPour:"Verter y separar", animBlocks:"Bloques",
     problemConc:(g,v)=>`Se agregan <span class="num">${g} g</span> de sal a <span class="num">${v} mL</span> de agua.`,
@@ -587,13 +585,8 @@ const T = {
     topped:(f)=>`La última copia es solo una parte: ${f} de una copia.`,
     lastPiece:(r,f)=>`Ya no queda una porción completa. El último pedazo es ${r} mL, o sea ${f} de una porción.`,
     built:"¡Listo! Ahora contesta la pregunta.", nothing:"Ya son 1000 mL, así que no hay nada que construir. Contesta la pregunta.",
-    buildFirst:"Primero constrúyelo (usa los botones debajo del dibujo) y luego contesta. O presiona Muéstrame.",
+    buildFirst:"Primero constrúyelo (usa los botones debajo del dibujo) y luego contesta. O presiona Muéstrame cómo.",
     timedNote:"Contesta primero. Luego mira cómo cambia la escala.",
-    hintConcSmall:(v,f)=>`${v} mL es menos que 1000 mL. Se necesitan ${f} copias de esta agua para llenar 1000 mL, así que multiplica la sal por ${f}.`,
-    hintConcLarge:(v,n)=>`${v} mL es más que 1000 mL. Se divide en ${n} porciones de 1000 mL, así que divide la sal entre ${n}.`,
-    hintSaltSmall:(v,n)=>`${v} mL es menos que 1000 mL. 1000 mL se divide en ${n} porciones de ${v} mL, así que divide la sal entre ${n}.`,
-    hintSaltLarge:(v,n)=>`${v} mL es más que 1000 mL. Se necesitan ${n} copias de 1000 mL, así que multiplica la sal por ${n}.`,
-    hintEqual:"El agua ya es exactamente 1000 mL. La sal no cambia.",
     good:"¡Correcto!", close:"¡Casi! Dentro del 10%.", bad:"Esta vez no.", unit:"Número correcto, unidad incorrecta.",
     unitLabel:"Unidad", unitPick:"¿unidad?", needUnit:"Elige una unidad: ppt o g.",
     unitWas:(u)=>`La unidad debe ser ${u}.`,
@@ -623,7 +616,7 @@ const T = {
     typeConc:"Tìm độ mặn", typeSalt:"Tìm lượng muối", typeMix:"Trộn lẫn", typeLabel:"Loại bài toán",
     ownTitle:"Dùng số của tôi", gLabel:"Muối (g)", cLabel:"Độ mặn (ppt)", vLabel:"Nước (mL)", useMine:"Vẽ",
     perL:"ppt (phần nghìn)", gUnit:"g", predLabel:"Câu trả lời của bạn",
-    check:"Kiểm tra", hint:"Gợi ý", showMe:"Chỉ cho tôi", newP:"Bài mới", next:"Bài tiếp theo",
+    check:"Kiểm tra", showMe:"Chỉ cho tôi cách làm", newP:"Bài mới", next:"Bài tiếp theo",
     aboutTitle:"Về các con số", timeUp:"Hết giờ!", again:"Chơi lại", backPractice:"Quay lại luyện tập",
     topOff:"Đổ cho đầy", undo:"Hoàn tác", animPour:"Rót và tách", animBlocks:"Khối",
     problemConc:(g,v)=>`Thêm <span class="num">${g} g</span> muối vào <span class="num">${v} mL</span> nước.`,
@@ -641,13 +634,8 @@ const T = {
     topped:(f)=>`Bản sao cuối cùng chỉ là một phần: ${f} bản sao.`,
     lastPiece:(r,f)=>`Không còn đủ cho một phần đầy đủ. Mẩu cuối là ${r} mL, tức là ${f} phần.`,
     built:"Xong! Bây giờ hãy trả lời câu hỏi.", nothing:"Đã là 1000 mL rồi, nên không cần xây. Hãy trả lời câu hỏi.",
-    buildFirst:"Hãy xây trước (dùng các nút dưới hình), rồi trả lời. Hoặc bấm Chỉ cho tôi.",
+    buildFirst:"Hãy xây trước (dùng các nút dưới hình), rồi trả lời. Hoặc bấm Chỉ cho tôi cách làm.",
     timedNote:"Trả lời trước. Sau đó xem hình đổi tỉ lệ.",
-    hintConcSmall:(v,f)=>`${v} mL ít hơn 1000 mL. Cần ${f} bản sao của nước này để được 1000 mL, nên nhân lượng muối với ${f}.`,
-    hintConcLarge:(v,n)=>`${v} mL nhiều hơn 1000 mL. Nó chia thành ${n} phần 1000 mL, nên chia lượng muối cho ${n}.`,
-    hintSaltSmall:(v,n)=>`${v} mL ít hơn 1000 mL. 1000 mL chia thành ${n} phần ${v} mL, nên chia lượng muối cho ${n}.`,
-    hintSaltLarge:(v,n)=>`${v} mL nhiều hơn 1000 mL. Cần ${n} bản sao 1000 mL, nên nhân lượng muối với ${n}.`,
-    hintEqual:"Nước đã đúng 1000 mL. Lượng muối không đổi.",
     good:"Đúng rồi!", close:"Gần đúng! Sai lệch dưới 10%.", bad:"Lần này chưa đúng.", unit:"Đúng số, sai đơn vị.",
     unitLabel:"Đơn vị", unitPick:"đơn vị?", needUnit:"Hãy chọn đơn vị: ppt hoặc g.",
     unitWas:(u)=>`Đơn vị phải là ${u}.`,
@@ -677,10 +665,11 @@ const S = {
   score:0, streak:0, correct:0, attempts:0, level:1, best:0,
   prob:null,          // {kind:"conc"|"salt", V, g, C, ans}
   phase:"idle",       // idle | build | predict | animating | result
-  hintOn:false, showUsed:false, busy:false,
+  showUsed:false, busy:false,
   speed:1, timeLeft:90, timerId:null,
   run:0,              // bumps every new problem so old animations stop
   lastSay:"", lastResult:null,
+  mental:false,       // Mental math practice: easy whole numbers, no calculator
   view:"pic",         // Practice / Layer stack: "pic" | "word" | "mix"
   anim:"pour",        // animation style: "pour" (cup + separate beakers) or "blocks"
   boost:1
@@ -708,7 +697,20 @@ const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 // Picks a salinity C (g per 1000 mL) and a volume V, then g = C × V / 1000.
 // Level 1: whole-number factors. Level 2: factors like 2.5 or 1.25.
 // Level 3: any volume; answers rounded to 0.1.
+// Mental math: whole numbers only, and the scale factor is ×2, ×4, ×5, ×10 or ÷2, ÷4, ÷5, ÷10,
+// so both the given numbers and the answer (ppt or grams) are whole numbers.
+function makeMentalNumbers(){
+  for (let i = 0; i < 500; i++){
+    const V = pick([100, 200, 250, 500, 2000, 4000, 5000, 10000]);
+    const C = pick([2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 25, 30, 35, 40, 45, 50, 60, 80, 100, 120]);
+    const g = C * V / 1000;
+    if (!Number.isInteger(g) || g < 1) continue;
+    return { V, g, C };
+  }
+  return { V:250, g:5, C:20 };
+}
 function makeNumbers(level){
+  if (S.mental) return makeMentalNumbers();
   for (let i = 0; i < 300; i++){
     const small = Math.random() < 0.5;
     let V, C, dec = 1;
@@ -1249,9 +1251,9 @@ function newProblem(custom){
   S.prob.word = S.mode === "timed" ? Math.random() < 0.5
               : S.view === "word" ? true : S.view === "mix" ? Math.random() < 0.5 : false;
   if (S.prob.word) S.prob.story = makeStory(S.prob);
-  S.hintOn = false; S.showUsed = false; S.lastResult = null;
+  S.showUsed = false; S.lastResult = null;
   $("predUnitSel").value = ""; $("predUnitSel").disabled = false;
-  $("result").hidden = true; $("hintBox").hidden = true;
+  $("result").hidden = true;
   $("predMsg").textContent = ""; $("pred").value = "";
   drawProblem();
   renderText();
@@ -1292,8 +1294,8 @@ function syncButtons(){
   $("bUndo").disabled = !building || (fill ? (Bd.k <= 1 && !Bd.part) : Bd.k === 0);
   $("showBtn").hidden = S.mode !== "practice" || (S.prob && S.prob.word);
   $("showBtn").disabled = Bd.done || S.phase === "result";
-  $("hintBtn").disabled = S.phase === "result" || S.phase === "animating";
-  $("hintBtn").hidden = S.mode === "timed";      // the hint would tell them what to find
+  $("revealBtn").hidden = S.mode !== "practice";          // never in the test
+  $("revealBtn").disabled = S.phase === "result" || S.phase === "animating";
   if (S.prob && S.prob.V === 1000) $("buildBox").querySelector(".row").hidden = true;
   else $("buildBox").querySelector(".row").hidden = false;
 }
@@ -1323,24 +1325,25 @@ function renderText(){
   updateReadout(S.phase === "result");
 }
 
-function hintText(){
-  const p = S.prob, L = t(), n = Gm.n;
-  let lead;
-  if (p.V === 1000) lead = L.hintEqual;
-  else if (p.kind === "conc") lead = p.V < 1000 ? L.hintConcSmall(fmt(p.V), approx(n)) : L.hintConcLarge(fmt(p.V), approx(n));
-  else lead = p.V < 1000 ? L.hintSaltSmall(fmt(p.V), approx(n)) : L.hintSaltLarge(fmt(p.V), approx(n));
-  const frame = p.kind === "conc" ? `${fmt(p.g)} g / ${fmt(p.V)} mL = ? g / 1000 mL`
-                                  : `${fmt(p.C)} g / 1000 mL = ? g / ${fmt(p.V)} mL`;
-  return { lead, frame };
-}
-function showHint(){
-  const h = hintText(), box = $("hintBox");
-  box.innerHTML = "";
-  box.append(h.lead);
-  const s = document.createElement("span"); s.className = "frame"; s.textContent = h.frame;
-  box.appendChild(s);
-  box.hidden = false; S.hintOn = true;
-  S.lastSay = h.lead;
+// "Show me the answer" (Practice only): plays the picture, shows the answer and
+// the worked steps. 0 points; the streak doesn't change.
+async function revealAnswer(){
+  if (S.mode !== "practice" || S.busy || S.phase === "result" || S.phase === "animating") return;
+  S.phase = "animating";
+  $("pred").disabled = true; $("checkBtn").disabled = true; $("predMsg").textContent = "";
+  syncButtons();
+  const myRun = S.run;
+  if (S.prob.word) setWordView(false);
+  if (!Bd.done){ await sleep(150); await autoBuild(); }
+  if (S.run !== myRun) return;
+  S.phase = "result";
+  S.lastResult = { verdict: "shown", guess: NaN, pts: 0, unit: "" };
+  renderHighlight(true); updateReadout(true);
+  showResult(); syncButtons();
+  const L = t();
+  showPop({ info: true, title: L.shown,
+            lines: [$("answerLine").textContent, ...[...$("steps").children].map(li => li.textContent)],
+            next: [L.next, newProblem], close: [L.popLook, () => $("nextBtn").focus()] });
 }
 async function showMe(){
   if (S.mode !== "practice" || Bd.done || S.busy) return;
@@ -1377,12 +1380,12 @@ async function check(e){
   if (!Bd.done){ await sleep(150); await autoBuild(); }      // timed test / word problem: watch it scale now
   if (S.run !== myRun) return;
 
-  // scoring: 10 points + streak bonus; a hint or "Show me" halves it; close = 3
+  // scoring: 10 points + streak bonus; "Show me how" halves it; close = 3
   S.attempts++;
   let pts = 0;
   if (verdict === "good"){
     pts = 10 + 2 * Math.min(S.streak, 10);
-    if (S.hintOn || S.showUsed) pts = Math.ceil(pts / 2);
+    if (S.showUsed) pts = Math.ceil(pts / 2);
     S.streak++; S.correct++;
   } else {
     if (verdict === "close") pts = 3;
@@ -1420,7 +1423,7 @@ function showResult(){
   box.className = "result " + (verdict === "unit" ? "close" : verdict);
   const rightUnit = p.kind === "conc" ? "ppt" : "g";
   const unitNote = unit && unit !== rightUnit ? " " + L.unitWas(rightUnit) : "";
-  $("verdict").textContent = `${L[verdict]} ${L.pts(pts)}`.trim() + unitNote;
+  $("verdict").textContent = (verdict === "shown" ? L.shown : `${L[verdict]} ${L.pts(pts)}`.trim()) + unitNote;
   const pre = inexact(p.ans) ? "≈ " : "";
   $("answerLine").textContent = pre + (p.kind === "conc" ? L.answerConc(fmt(p.ans)) : L.answerSalt(fmt(p.ans), fmt(p.V)));
   // worked steps
@@ -1439,7 +1442,7 @@ function showResult(){
   }
   const ol = $("steps"); ol.innerHTML = "";
   steps.forEach(s => { const li = document.createElement("li"); li.textContent = s; ol.appendChild(li); });
-  $("youSaid").textContent = L.youSaid(fmt(guess) + (unit ? " " + unit : ""));
+  $("youSaid").textContent = isFinite(guess) ? L.youSaid(fmt(guess) + (unit ? " " + unit : "")) : "";
   $("satNote").hidden = p.C <= SAT; $("satNote").textContent = L.sat;
   $("nextBtn").hidden = S.mode === "timed";
   box.hidden = false;
@@ -1455,11 +1458,14 @@ function updateStats(pop){
 }
 
 // ---------- Modes ----------
-function setMode(mode){
+function setMode(mode, mental = false){
   S.mode = mode;
-  $("mPractice").setAttribute("aria-pressed", mode === "practice");
+  S.mental = mental && (mode === "practice" || mode === "stack");   // mental math is a kind of practice
+  $("mPractice").setAttribute("aria-pressed", mode === "practice" && !S.mental);
+  $("mMental").setAttribute("aria-pressed", mode === "practice" && S.mental);
+  $("mStackMental").setAttribute("aria-pressed", mode === "stack" && S.mental);
   $("mTimed").setAttribute("aria-pressed", mode === "timed");
-  $("mStack").setAttribute("aria-pressed", mode === "stack");
+  $("mStack").setAttribute("aria-pressed", mode === "stack" && !S.mental);
   $("mStackTest").setAttribute("aria-pressed", mode === "stacktest");
   clearInterval(S.timerId); clearInterval(S.stTimer); hidePop();
   // Layer stack and Layer test share their own screen
@@ -1470,6 +1476,8 @@ function setMode(mode){
   $(stack ? "calcSlotStack" : "calcSlotMain").appendChild($("calcBox"));
   $(stack ? "eqSlotStack" : "eqSlotMain").appendChild($("eqBox"));
   $("calcUse").hidden = stack;          // "Put in answer box" only where there is an answer box
+  $("calcBox").hidden = S.mental;       // no calculator in mental math
+  $("mentalNote").hidden = !S.mental;
   $("overlay").hidden = true;
   S.score = 0; S.streak = 0; S.correct = 0; S.attempts = 0; S.level = 1;
   $("ownDetails").hidden = mode === "timed";
@@ -1495,7 +1503,7 @@ function setType(type){
   if (type !== "mix") $("ownKind").value = type;
   syncOwnForm();
   // picking a problem type always means Practice (the tests mix both kinds)
-  if (S.mode !== "practice") setMode("practice"); else newProblem();
+  if (S.mode !== "practice") setMode("practice"); else newProblem();   // stays in mental math if already there
 }
 function endTimed(){
   clearInterval(S.timerId);
@@ -1525,13 +1533,12 @@ function setLang(l){
     if (S.phase === "build"){ setAnswerEnabled(false); S.lastSay = say(); }
     else if (S.phase === "predict"){ setAnswerEnabled(true); S.lastSay = say(); }
     if (S.mode === "timed") $("waitNote").textContent = t().timedNote;
-    if (S.hintOn) showHint();
     if (S.lastResult) showResult();
     bmsg("");
   }
   if (typeof calcLabels === "function"){ calcLabels(); if (CALC.justDone && !isFinite(Number(CALC.expr || "x"))) calcRender(t().calcErr); }
   if (isStackMode() && ST.set.length) relabelTracker();
-  if (isStackMode() && ST.set.length){ renderStackText(); syncStack(); if (ST.hint) stackHint(); if (!ST.settled) S.lastSay = stackSay(); }
+  if (isStackMode() && ST.set.length){ renderStackText(); syncStack(); if (!ST.settled) S.lastSay = stackSay(); }
   try { localStorage.setItem("ssu-lang", l); } catch(e){}
 }
 function speak(){
@@ -1680,9 +1687,9 @@ function setView(v, section){
 
 // =====================================================================
 // LAYER STACK
-// Four salt solutions, each dyed a different color. Students tap them in the
+// Three salt solutions, each dyed a different color. Students tap them in the
 // order they would pour them into a tall column (first tap = bottom layer).
-// "Let it settle" then lets physics fix any mistakes: a saltier (denser)
+// "Check" then lets physics fix any mistakes: a saltier (denser)
 // layer sitting on a less salty one sinks through it.
 // Every solution is poured in the SAME amount, so only salinity matters.
 // =====================================================================
@@ -1691,8 +1698,9 @@ Object.assign(T.en, {
   wordNote:"Word problem: no picture yet. The picture appears after you check your answer.",
   eqGSalt:"g of salt", eq1000:"1000 mL H₂O", eqSaltIn:"# of mL H₂O the salt is in", eqSalinity:"Salinity", eqYouHave:"# of mL of H₂O you have",
   calcName:"Calculator", calcErr:"Error", calcUse:"Put in answer box", calcKeys:{divide:"divide",times:"times",minus:"minus",plus:"plus",equals:"equals",del:"delete",clear:"clear"},
+  revealBtn:"Show me the answer", shown:"Here's the answer.", mental:"Mental math practice", mentalNote:"Mental math: easy whole numbers, no calculator. Do it in your head!",
   secSal:"Salinity problems", secStack:"Layer stacking", stackTest:"Layer test", trackTitle:"Salinity tracker", trackHelp:"Work out each salinity and write it here.",
-  submit:"Submit", needAllTest:"Fill in all 4 salinities and pour all 4 layers, then press Submit.",
+  submit:"Submit", needAllTest:"Fill in all 3 salinities and pour all 3 layers, then press Submit.",
   testIntro:"Test: find each salinity, write it in the tracker, then pour the layers in order. You have 120 seconds.",
   popNext:"Next question", popLook:"Look again", blank:"nothing", notPoured:"(not all poured)",
   testGood:"Correct! Every salinity and the whole stack are right.", testBad:"Not quite.",
@@ -1700,16 +1708,15 @@ Object.assign(T.en, {
   orderLine:(ok,yours,right)=> ok ? `✓ Stack order (bottom → top): ${right}` : `✗ Your stack (bottom → top): ${yours}. The correct stack is ${right}.`,
   autoSub:"Time's up! Your answers were submitted.",
   whyOrder:"Saltier water is denser, so the saltiest layer goes on the bottom.", bottomTop:"Bottom → top:",
-  stackMode:"Layer stack", stackTitle:"Stack the layers", settle:"Let it settle", newSet:"New set",
-  stackIntro:"You made four salt-water solutions and dyed each one a different color. You will pour the same amount of each into a tall column. Tap them in the order you would pour them, starting with the bottom layer.",
-  stackHint:"Saltier water is denser, so it sinks to the bottom. Find the ppt of each solution first: scale each one to 1000 mL.",
+  stackMode:"Layer stack", stackTitle:"Stack the layers", settle:"Check", newSet:"New set",
+  stackIntro:"You made three salt-water solutions and dyed each one a different color. You will pour the same amount of each into a tall column. Tap them in the order you would pour them, starting with the bottom layer.",
   recipe:(g,v)=>`${g} g salt in ${v} mL`,
   dyes:{red:"Red",yellow:"Yellow",green:"Green",blue:"Blue"},
   pourLabel:(id,c,r)=>`Pour ${id}, ${c}: ${r}`,
-  poured:(n)=>`${n} of 4 poured.`, ready:"All 4 are in. Press Let it settle to see what happens.",
-  needAll:"Pour all 4 solutions first.",
+  poured:(n)=>`${n} of 3 poured.`, ready:"All 3 are in. Press Check to see what happens.",
+  needAll:"Pour all 3 solutions first.",
   sink:(a,ac,ap,b,bc,bp)=>`${a} (${ac}, ${ap} ppt) is saltier than ${b} (${bc}, ${bp} ppt), so it is denser and sinks below it.`,
-  perfect:"Perfect stack! Every layer was in the right place.", partial:(n)=>`${n} of 4 layers were in the right place.`,
+  perfect:"Perfect stack! Every layer was in the right place.", partial:(n)=>`${n} of 3 layers were in the right place.`,
   noSink:"Nothing had to move.",
   calc:(id,c,g,v,p)=>`${id} (${c}): ${g} g ÷ ${v} mL × 1000 = ${p} ppt`,
   realNote:"In a real column, a layer poured in the wrong place sinks and partly mixes, so the colors get muddy.",
@@ -1721,8 +1728,9 @@ Object.assign(T.es, {
   wordNote:"Problema escrito: todavía no hay dibujo. El dibujo aparece después de revisar tu respuesta.",
   eqGSalt:"g de sal", eq1000:"1000 mL H₂O", eqSaltIn:"# de mL H₂O donde está la sal", eqSalinity:"Salinidad", eqYouHave:"# de mL de H₂O que tienes",
   calcName:"Calculadora", calcErr:"Error", calcUse:"Poner en la respuesta", calcKeys:{divide:"dividir",times:"por",minus:"menos",plus:"más",equals:"igual",del:"borrar",clear:"limpiar"},
+  revealBtn:"Muéstrame la respuesta", shown:"Aquí está la respuesta.", mental:"Práctica de cálculo mental", mentalNote:"Cálculo mental: números enteros fáciles, sin calculadora. ¡Hazlo en tu cabeza!",
   secSal:"Problemas de salinidad", secStack:"Capas de agua salada", stackTest:"Prueba de capas", trackTitle:"Registro de salinidad", trackHelp:"Calcula cada salinidad y escríbela aquí.",
-  submit:"Entregar", needAllTest:"Escribe las 4 salinidades y vierte las 4 capas; luego presiona Entregar.",
+  submit:"Entregar", needAllTest:"Escribe las 3 salinidades y vierte las 3 capas; luego presiona Entregar.",
   testIntro:"Prueba: encuentra cada salinidad, escríbela en el registro y vierte las capas en orden. Tienes 120 segundos.",
   popNext:"Siguiente pregunta", popLook:"Ver otra vez", blank:"nada", notPoured:"(no se vertieron todas)",
   testGood:"¡Correcto! Todas las salinidades y toda la columna están bien.", testBad:"No del todo.",
@@ -1730,16 +1738,15 @@ Object.assign(T.es, {
   orderLine:(ok,yours,right)=> ok ? `✓ Orden (abajo → arriba): ${right}` : `✗ Tu columna (abajo → arriba): ${yours}. La columna correcta es ${right}.`,
   autoSub:"¡Se acabó el tiempo! Se entregaron tus respuestas.",
   whyOrder:"El agua más salada es más densa, así que la capa más salada va abajo.", bottomTop:"De abajo hacia arriba:",
-  stackMode:"Capas", stackTitle:"Apila las capas", settle:"Dejar asentar", newSet:"Nuevo grupo",
-  stackIntro:"Preparaste cuatro soluciones de agua salada y pintaste cada una de un color diferente. Vas a verter la misma cantidad de cada una en una columna alta. Tócalas en el orden en que las verterías, empezando por la capa de abajo.",
-  stackHint:"El agua más salada es más densa, así que se hunde al fondo. Primero encuentra las ppt de cada solución: lleva cada una a 1000 mL.",
+  stackMode:"Capas", stackTitle:"Apila las capas", settle:"Revisar", newSet:"Nuevo grupo",
+  stackIntro:"Preparaste tres soluciones de agua salada y pintaste cada una de un color diferente. Vas a verter la misma cantidad de cada una en una columna alta. Tócalas en el orden en que las verterías, empezando por la capa de abajo.",
   recipe:(g,v)=>`${g} g de sal en ${v} mL`,
   dyes:{red:"Rojo",yellow:"Amarillo",green:"Verde",blue:"Azul"},
   pourLabel:(id,c,r)=>`Verter ${id}, ${c}: ${r}`,
-  poured:(n)=>`${n} de 4 vertidas.`, ready:"Ya están las 4. Presiona Dejar asentar para ver qué pasa.",
-  needAll:"Primero vierte las 4 soluciones.",
+  poured:(n)=>`${n} de 3 vertidas.`, ready:"Ya están las 3. Presiona Revisar para ver qué pasa.",
+  needAll:"Primero vierte las 3 soluciones.",
   sink:(a,ac,ap,b,bc,bp)=>`${a} (${ac}, ${ap} ppt) es más salada que ${b} (${bc}, ${bp} ppt), así que es más densa y se hunde debajo.`,
-  perfect:"¡Columna perfecta! Cada capa estaba en su lugar.", partial:(n)=>`${n} de 4 capas estaban en su lugar.`,
+  perfect:"¡Columna perfecta! Cada capa estaba en su lugar.", partial:(n)=>`${n} de 3 capas estaban en su lugar.`,
   noSink:"Nada tuvo que moverse.",
   calc:(id,c,g,v,p)=>`${id} (${c}): ${g} g ÷ ${v} mL × 1000 = ${p} ppt`,
   realNote:"En una columna real, una capa vertida en el lugar equivocado se hunde y se mezcla en parte, y los colores se ven turbios.",
@@ -1751,8 +1758,9 @@ Object.assign(T.vi, {
   wordNote:"Bài toán chữ: chưa có hình. Hình sẽ hiện ra sau khi bạn kiểm tra đáp án.",
   eqGSalt:"g muối", eq1000:"1000 mL H₂O", eqSaltIn:"số mL H₂O chứa muối", eqSalinity:"Độ mặn", eqYouHave:"số mL H₂O bạn có",
   calcName:"Máy tính", calcErr:"Lỗi", calcUse:"Đưa vào ô trả lời", calcKeys:{divide:"chia",times:"nhân",minus:"trừ",plus:"cộng",equals:"bằng",del:"xóa",clear:"xóa hết"},
+  revealBtn:"Cho tôi xem đáp án", shown:"Đây là đáp án.", mental:"Luyện tính nhẩm", mentalNote:"Tính nhẩm: số nguyên dễ, không dùng máy tính. Hãy tính trong đầu!",
   secSal:"Bài toán độ mặn", secStack:"Xếp lớp nước muối", stackTest:"Kiểm tra xếp lớp", trackTitle:"Bảng ghi độ mặn", trackHelp:"Tính độ mặn của từng dung dịch và ghi vào đây.",
-  submit:"Nộp bài", needAllTest:"Hãy ghi cả 4 độ mặn và rót cả 4 lớp, rồi bấm Nộp bài.",
+  submit:"Nộp bài", needAllTest:"Hãy ghi cả 3 độ mặn và rót cả 3 lớp, rồi bấm Nộp bài.",
   testIntro:"Kiểm tra: tìm độ mặn của từng dung dịch, ghi vào bảng, rồi rót các lớp theo đúng thứ tự. Bạn có 120 giây.",
   popNext:"Câu tiếp theo", popLook:"Xem lại", blank:"trống", notPoured:"(chưa rót đủ)",
   testGood:"Đúng rồi! Mọi độ mặn và cả cột đều đúng.", testBad:"Chưa đúng hẳn.",
@@ -1760,16 +1768,15 @@ Object.assign(T.vi, {
   orderLine:(ok,yours,right)=> ok ? `✓ Thứ tự (dưới → trên): ${right}` : `✗ Cột của bạn (dưới → trên): ${yours}. Thứ tự đúng là ${right}.`,
   autoSub:"Hết giờ! Câu trả lời của bạn đã được nộp.",
   whyOrder:"Nước mặn hơn thì đặc hơn, nên lớp mặn nhất nằm dưới cùng.", bottomTop:"Từ dưới lên trên:",
-  stackMode:"Xếp lớp", stackTitle:"Xếp các lớp nước", settle:"Để lắng xuống", newSet:"Bộ mới",
-  stackIntro:"Bạn đã pha bốn dung dịch nước muối và nhuộm mỗi dung dịch một màu khác nhau. Bạn sẽ rót cùng một lượng của mỗi dung dịch vào một ống cao. Hãy chạm vào chúng theo thứ tự bạn sẽ rót, bắt đầu từ lớp dưới cùng.",
-  stackHint:"Nước mặn hơn thì đặc hơn (khối lượng riêng lớn hơn), nên chìm xuống đáy. Trước tiên hãy tìm ppt của mỗi dung dịch: đổi mỗi dung dịch về 1000 mL.",
+  stackMode:"Xếp lớp", stackTitle:"Xếp các lớp nước", settle:"Kiểm tra", newSet:"Bộ mới",
+  stackIntro:"Bạn đã pha ba dung dịch nước muối và nhuộm mỗi dung dịch một màu khác nhau. Bạn sẽ rót cùng một lượng của mỗi dung dịch vào một ống cao. Hãy chạm vào chúng theo thứ tự bạn sẽ rót, bắt đầu từ lớp dưới cùng.",
   recipe:(g,v)=>`${g} g muối trong ${v} mL`,
   dyes:{red:"Đỏ",yellow:"Vàng",green:"Xanh lá",blue:"Xanh dương"},
   pourLabel:(id,c,r)=>`Rót ${id}, ${c}: ${r}`,
-  poured:(n)=>`Đã rót ${n} trên 4.`, ready:"Đã rót đủ 4. Bấm Để lắng xuống để xem điều gì xảy ra.",
-  needAll:"Hãy rót cả 4 dung dịch trước.",
+  poured:(n)=>`Đã rót ${n} trên 3.`, ready:"Đã rót đủ 3. Bấm Kiểm tra để xem điều gì xảy ra.",
+  needAll:"Hãy rót cả 3 dung dịch trước.",
   sink:(a,ac,ap,b,bc,bp)=>`${a} (${ac}, ${ap} ppt) mặn hơn ${b} (${bc}, ${bp} ppt), nên đặc hơn và chìm xuống dưới.`,
-  perfect:"Xếp hoàn hảo! Mọi lớp đều đúng chỗ.", partial:(n)=>`${n} trên 4 lớp đúng chỗ.`,
+  perfect:"Xếp hoàn hảo! Mọi lớp đều đúng chỗ.", partial:(n)=>`${n} trên 3 lớp đúng chỗ.`,
   noSink:"Không lớp nào phải di chuyển.",
   calc:(id,c,g,v,p)=>`${id} (${c}): ${g} g ÷ ${v} mL × 1000 = ${p} ppt`,
   realNote:"Trong ống thật, lớp rót sai chỗ sẽ chìm xuống và trộn lẫn một phần, nên màu bị đục.",
@@ -1778,19 +1785,21 @@ Object.assign(T.vi, {
 });
 
 const DYES = ["red", "yellow", "green", "blue"];
-const ST = { set:[], order:[], settled:false, busy:false, hint:false, groups:{} };
+const ST = { set:[], order:[], settled:false, busy:false, groups:{} };
 const COL = { X:60, W:120, TOP:40, BOT:400 };
-COL.LH = (COL.BOT - COL.TOP - 16) / 4;           // height of one layer
+const N_LAYERS = 3;                               // how many solutions / layers per question
+COL.LH = (COL.BOT - COL.TOP - 16) / N_LAYERS;    // height of one layer
 const layerY = i => COL.BOT - (i + 1) * COL.LH;   // i = 0 is the bottom
 
-// Four solutions with clearly different salinities. The grams are chosen so
+// Three solutions with clearly different salinities. The grams are chosen so
 // that "most salt" is NOT always "saltiest" — students have to compute ppt.
 function makeStackSet(){
   const pool = [3,5,8,10,12,15,18,20,25,30,35,40,45,50,60,75,90,120];
-  const vols = [100,125,200,250,400,500,750,1250,1500,2000,2500,4000];
+  // mental math: only volumes with easy factors, and whole grams (checked below)
+  const vols = S.mental ? [100,200,250,500,2000,4000,5000] : [100,125,200,250,400,500,750,1250,1500,2000,2500,4000];
   for (let tries = 0; tries < 2000; tries++){
     const ppts = [];
-    while (ppts.length < 4){ const p = pick(pool); if (!ppts.includes(p)) ppts.push(p); }
+    while (ppts.length < N_LAYERS){ const p = pick(pool); if (!ppts.includes(p)) ppts.push(p); }
     const sorted = [...ppts].sort((a, b) => a - b);
     if (sorted.some((p, i) => i && (p < sorted[i-1] * 1.2 || p - sorted[i-1] < 3))) continue;
     const used = [], sols = [];
@@ -1798,9 +1807,10 @@ function makeStackSet(){
       const V = pick(vols.filter(v => !used.includes(v)));
       const g = p * V / 1000;
       if (Math.abs(g * 100 - Math.round(g * 100)) > 1e-6 || g < 0.5) break;
+      if (S.mental && !Number.isInteger(g)) break;
       used.push(V); sols.push({ g: Math.round(g * 100) / 100, V, ppt: p });
     }
-    if (sols.length < 4) continue;
+    if (sols.length < N_LAYERS) continue;
     // at least one pair where more grams ≠ saltier
     const tricky = sols.some(a => sols.some(b => a.g > b.g && a.ppt < b.ppt));
     if (!tricky) continue;
@@ -1810,8 +1820,7 @@ function makeStackSet(){
   return [
     { id:"A", dye:"red",    g:12,  V:400,  ppt:30 },
     { id:"B", dye:"yellow", g:20,  V:2000, ppt:10 },
-    { id:"C", dye:"green",  g:6,   V:100,  ppt:60 },
-    { id:"D", dye:"blue",   g:4,   V:250,  ppt:16 }
+    { id:"C", dye:"green",  g:6,   V:100,  ppt:60 }
   ];
 }
 const solById = id => ST.set.find(s => s.id === id);
@@ -1819,13 +1828,13 @@ const dyeName = s => t().dyes[s.dye];
 
 function newStack(){
   S.run++;
-  ST.set = makeStackSet(); ST.order = []; ST.settled = false; ST.busy = false; ST.hint = false;
-  ST.submitting = false; ST.testResult = null;
+  ST.set = makeStackSet(); ST.order = []; ST.settled = false; ST.busy = false;
+  ST.submitting = false; ST.testResult = null; ST.lastScore = null;
   const test = S.mode === "stacktest";
   // Layer test: random picture or word; Layer stack: follows the switch
   ST.word = test ? Math.random() < 0.5 : S.view === "word" || (S.view === "mix" && Math.random() < 0.5);
   ST.name = pick(NAMES);
-  $("stResult").hidden = true; $("stHintBox").hidden = true;
+  $("stResult").hidden = true;
   hidePop();
   drawColumn(); renderStackText(); buildTracker(); syncStack();
   $("stTestNote").hidden = !test;
@@ -1868,7 +1877,7 @@ function renderStackText(){
   // column side labels
   const tl = $("colTop"), bl = $("colBottom");
   if (tl){ tl.textContent = L.colTop; bl.textContent = L.colBottom; }
-  if (ST.settled && S.mode === "stack") showStackResult(ST.lastScore);
+  if (ST.settled && S.mode === "stack" && ST.lastScore) showStackResult(ST.lastScore);
 }
 
 // The tall column
@@ -1931,13 +1940,14 @@ function syncStack(){
   $("stUndo").disabled = ST.settled || n === 0;
   const test = S.mode === "stacktest";
   $("stSettle").hidden = test; $("stSubmit").hidden = !test;
-  $("stSettle").disabled = ST.settled || n < 4;
+  $("stSettle").disabled = ST.settled || n < N_LAYERS;
   $("stSubmit").disabled = ST.settled || ST.submitting;
-  $("stHint").hidden = test; $("stNew").hidden = test;    // no hints or skipping in the test
-  $("stHint").disabled = ST.settled;
+  $("stNew").hidden = test;                         // no skipping in the test
+  $("stReveal").hidden = test;                      // no answers in the test
+  $("stReveal").disabled = ST.settled || ST.busy;
   const m = $("stMsg");
-  m.className = "bmsg" + (n === 4 && !ST.settled ? " good" : "");
-  m.textContent = ST.settled ? "" : n === 4 ? (test ? "" : t().ready) : t().poured(n);
+  m.className = "bmsg" + (n === N_LAYERS && !ST.settled ? " good" : "");
+  m.textContent = ST.settled ? "" : n === N_LAYERS ? (test ? "" : t().ready) : t().poured(n);
 }
 
 // Physics: while any SALTIER layer sits on top of a less salty one,
@@ -1948,7 +1958,7 @@ async function settleColumn(){
   let moved = true;
   while (moved){
     moved = false;
-    for (let i = 0; i < 3; i++){
+    for (let i = 0; i < ST.order.length - 1; i++){
       const lower = solById(ST.order[i]), upper = solById(ST.order[i + 1]);
       if (upper.ppt > lower.ppt){
         sinks.push({ u: upper.id, l: lower.id });       // text is built later, in the current language
@@ -1976,7 +1986,7 @@ function revealLayerLabels(){
 // Layer stack (practice): settle, score, pop-up
 async function settle(){
   if (ST.busy || ST.settled) return;
-  if (ST.order.length < 4){ $("stMsg").textContent = t().needAll; return; }
+  if (ST.order.length < N_LAYERS){ $("stMsg").textContent = t().needAll; return; }
   ST.busy = true;
   const myRun = S.run;
   const student = [...ST.order];
@@ -1989,9 +1999,8 @@ async function settle(){
   // scoring
   S.attempts++;
   let pts;
-  if (right === 4){
+  if (right === N_LAYERS){
     pts = 20 + 2 * Math.min(S.streak, 10);
-    if (ST.hint) pts = Math.ceil(pts / 2);
     S.streak++; S.correct++;
   } else { pts = 3 * right; S.streak = 0; }
   S.score += pts;
@@ -2008,14 +2017,14 @@ async function settle(){
     lines.push({ text: orderWithPpt(), cls: "pop-note" });
   }
   [...ST.set].sort((a, b) => b.ppt - a.ppt).forEach(s => lines.push({ text: L.calc(s.id, dyeName(s), fmt(s.g), fmt(s.V), fmt(s.ppt)), cls:"pop-calc" }));
-  showPop({ good: right === 4, title: `${right === 4 ? L.perfect : L.partial(right)} ${L.pts(pts)}`.trim(),
+  showPop({ good: right === N_LAYERS, title: `${right === N_LAYERS ? L.perfect : L.partial(right)} ${L.pts(pts)}`.trim(),
             lines, next: [L.popNext, newStack], close: [L.popLook, () => $("stNext").focus()] });
 }
 function showStackResult(sc){
   const L = t(), { right, pts, sinks } = sc;
   const box = $("stResult");
-  box.className = "result " + (right === 4 ? "good" : right >= 2 ? "close" : "bad");
-  $("stVerdict").textContent = `${right === 4 ? L.perfect : L.partial(right)} ${L.pts(pts)}`.trim();
+  box.className = "result " + (right === N_LAYERS ? "good" : right >= 2 ? "close" : "bad");
+  $("stVerdict").textContent = `${right === N_LAYERS ? L.perfect : L.partial(right)} ${L.pts(pts)}`.trim();
   // sink explanations must be rebuilt in the current language
   const ul = $("stSinks"); ul.innerHTML = "";
   const say = ({ u, l }) => { const a = solById(u), b = solById(l);
@@ -2031,16 +2040,32 @@ function showStackResult(sc){
   box.hidden = false;
   S.lastSay = `${$("stVerdict").textContent} ${[...ul.children].map(li => li.textContent).join(" ")}`;
 }
-function stackHint(){
-  ST.hint = true;
-  $("stHintBox").textContent = t().stackHint;
-  $("stHintBox").hidden = false;
-  S.lastSay = t().stackHint;
-}
 $("stUndo").addEventListener("click", undoPour);
 $("stSettle").addEventListener("click", settle);
 $("stSubmit").addEventListener("click", () => submitTest(false));
-$("stHint").addEventListener("click", stackHint);
+$("stReveal").addEventListener("click", revealStack);
+// "Show me the answer" (Layer stack only): empties the column, pours the layers in the
+// right order, fills in the tracker, and explains. 0 points; streak unchanged.
+async function revealStack(){
+  if (S.mode !== "stack" || ST.settled || ST.busy) return;
+  const myRun = S.run;
+  ST.order.forEach(id => { ST.groups[id].g.remove(); delete ST.groups[id]; });
+  ST.order = [];
+  const correct = [...ST.set].sort((a, b) => b.ppt - a.ppt);
+  for (const s of correct){ await pourLayer(s.id); if (S.run !== myRun) return; }
+  ST.set.forEach(s => {
+    $("trk" + s.id).value = fmt(s.ppt);
+    const m = $("trkMark" + s.id); m.textContent = "✓"; m.className = "trk-mark ok";
+  });
+  revealLayerLabels();
+  ST.settled = true;
+  renderStackText(); relabelTracker(); syncStack();
+  const L = t();
+  showPop({ info: true, title: L.shown,
+            lines: [L.whyOrder, { text: orderWithPpt(), cls: "pop-note" },
+                    ...correct.map(s => ({ text: L.calc(s.id, dyeName(s), fmt(s.g), fmt(s.V), fmt(s.ppt)), cls: "pop-calc" }))],
+            next: [L.popNext, newStack], close: [L.popLook, () => {}] });
+}
 $("stNew").addEventListener("click", newStack);
 $("stNext").addEventListener("click", newStack);
 
@@ -2054,7 +2079,7 @@ const POP = { next:null, close:null, timer:null };
 function showPop(o){
   clearTimeout(POP.timer);
   const card = $("fbCard");
-  card.className = "card pop " + (o.good ? "good" : "bad");
+  card.className = "card pop " + (o.info ? "info" : o.good ? "good" : "bad");
   $("fbTitle").textContent = o.title;
   const body = $("fbBody"); body.innerHTML = "";
   (o.lines || []).forEach(line => {
@@ -2117,7 +2142,7 @@ function confetti(){
 // Tracker: one row per solution where students write its salinity (ppt).
 //   Layer stack (practice): each row has its own Check button.
 //   Layer test: no checking; everything is graded on Submit.
-// Layer test: one question, 120 s. Correct = all 4 salinities right AND the
+// Layer test: one question, 120 s. Correct = all 3 salinities right AND the
 // stack in the right order. At 0 s whatever is there is submitted.
 // =====================================================================
 const STACK_TEST_SECONDS = 120;
@@ -2176,18 +2201,18 @@ function startStackClock(){
 async function submitTest(auto){
   if (S.mode !== "stacktest" || ST.settled || ST.submitting) return;
   const vals = ST.set.map(s => readPpt(s.id));
-  if (!auto && (vals.some(v => !isFinite(v)) || ST.order.length < 4)){ $("stMsg").textContent = t().needAllTest; return; }
+  if (!auto && (vals.some(v => !isFinite(v)) || ST.order.length < N_LAYERS)){ $("stMsg").textContent = t().needAllTest; return; }
   while (ST.busy) await sleep(50);                 // let a pour finish first
   ST.submitting = true; clearInterval(S.stTimer);
   const myRun = S.run;
   const correct = [...ST.set].sort((a, b) => b.ppt - a.ppt).map(s => s.id);   // bottom → top
   const student = [...ST.order];
   const rows = ST.set.map((s, i) => ({ s, guess: vals[i], ok: isFinite(vals[i]) && closeEnough(vals[i], s.ppt) }));
-  const orderOk = student.length === 4 && student.every((id, i) => id === correct[i]);
+  const orderOk = student.length === N_LAYERS && student.every((id, i) => id === correct[i]);
   // lock the tracker
   ST.set.forEach(s => $("trk" + s.id).disabled = true);
-  // let the column settle so students SEE the right order (only if all 4 are in)
-  const sinks = student.length === 4 ? await settleColumn() : [];
+  // let the column settle so students SEE the right order (only if all are in)
+  const sinks = student.length === N_LAYERS ? await settleColumn() : [];
   if (S.run !== myRun) return;
   revealLayerLabels();
   const allOk = orderOk && rows.every(r => r.ok);
@@ -2214,7 +2239,7 @@ function showTestPop(){
     lines.push({ text: L.rowLine(s.id, dyeName(s), isFinite(r.guess) ? fmt(r.guess) : L.blank, fmt(s.ppt), r.ok), cls: r.ok ? "ok" : "no" });
     if (!r.ok) lines.push({ text: "   " + L.calc(s.id, dyeName(s), fmt(s.g), fmt(s.V), fmt(s.ppt)), cls: "pop-calc" });
   });
-  const yours = R.student.length ? R.student.join(", ") + (R.student.length < 4 ? " " + L.notPoured : "") : L.blank;
+  const yours = R.student.length ? R.student.join(", ") + (R.student.length < N_LAYERS ? " " + L.notPoured : "") : L.blank;
   lines.push({ text: L.orderLine(R.orderOk, yours, R.correct.join(", ")), cls: R.orderOk ? "ok" : "no" });
   if (!R.allOk){
     lines.push(L.whyOrder);
@@ -2319,8 +2344,8 @@ calcLabels(); calcRender();
 
 // ---------- Wire up ----------
 $("predForm").addEventListener("submit", check);
-$("hintBtn").addEventListener("click", showHint);
 $("showBtn").addEventListener("click", showMe);
+$("revealBtn").addEventListener("click", revealAnswer);
 $("newBtn").addEventListener("click", () => newProblem());
 $("nextBtn").addEventListener("click", () => newProblem());
 $("bAdd").addEventListener("click", doAdd);
@@ -2328,6 +2353,8 @@ $("bTop").addEventListener("click", doTop);
 $("bCut").addEventListener("click", doCut);
 $("bUndo").addEventListener("click", doUndo);
 $("mPractice").addEventListener("click", () => setMode("practice"));
+$("mMental").addEventListener("click", () => setMode("practice", true));
+$("mStackMental").addEventListener("click", () => setMode("stack", true));
 $("mTimed").addEventListener("click", () => setMode("timed"));
 $("mStack").addEventListener("click", () => setMode("stack"));
 $("mStackTest").addEventListener("click", () => setMode("stacktest"));
