@@ -74,7 +74,7 @@ button{cursor:pointer}
 .stat b{font-family:var(--f-num);font-size:1.3rem;line-height:1.1}
 .stat span{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 .stat.timer b{color:var(--warn)}
-.stat.pop b{animation:pop .5s}
+.stat.bump b{animation:pop .5s}
 @keyframes pop{40%{transform:scale(1.3)}}
 
 /* ---- main grid ---- */
@@ -185,7 +185,49 @@ button{cursor:pointer}
 .navmode.test[aria-pressed="true"]{background:var(--test);color:var(--test-ink)}
 .navsec .seg.dim{opacity:.5}
 .mentalnote{flex-basis:100%;font-weight:700}
-.navrow .stats{margin-left:auto}
+.navrow .stats{margin-left:auto;flex:0 1 auto}
+/* hydrometer lab */
+.hygrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:14px;align-items:start}
+@media (max-width:960px){.hygrid{grid-template-columns:minmax(0,1fr)}}
+.hycyls{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+@media (max-width:480px){.hycyls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.hycyl{display:flex;flex-direction:column;align-items:center;gap:2px;border:2px solid var(--line);border-radius:12px;background:var(--surface);padding:6px 4px;font-size:.78rem;line-height:1.25;min-width:0;text-align:center}
+.hycyl svg{width:30px;height:66px}
+.hycyl b{font-family:var(--f-num);font-size:1.05rem}
+.hycyl.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.hystation{border:2px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.hy-st-lbl{margin:0;font-weight:700}
+.hy-st-row{display:flex;gap:10px;align-items:flex-start}
+#hyOverview{width:34%;max-width:150px;height:auto;flex:none}
+@media (max-width:520px){.hy-st-row{flex-direction:column;align-items:center} #hyOverview{width:45%} .hy-close-wrap{width:100%}}
+.hy-close-wrap{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+#hyClose{width:100%;max-width:320px;height:auto;border:2px solid var(--line);border-radius:12px;background:var(--surface)}
+.hy-water{fill:var(--water);opacity:.45}
+.hy-water-front{fill:var(--water);opacity:.3}
+.hy-stem{fill:#fffdf6;stroke:var(--glass);stroke-width:1.5}
+.hy-bulb{fill:#f2f5f6;stroke:var(--glass);stroke-width:1.5}
+.hy-weight{fill:#8b8f94}
+.hy-tick{stroke:#1d2b33;stroke-width:1.5}
+.hy-major{fill:var(--ink);font-family:var(--f-num);font-size:17px;font-weight:700}
+.hy-minor{fill:var(--ink);font-family:var(--f-num);font-size:14px}
+.hy-waterline{stroke:var(--accent);stroke-width:2;opacity:.85}
+.hy-zoombox{fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4}
+.hy-table-wrap{overflow-x:auto}
+.hytable{border-collapse:collapse;width:100%;font-size:.92rem}
+.hytable th,.hytable td{border-bottom:1.5px solid var(--line);padding:5px 6px;text-align:left;vertical-align:middle}
+.hytable thead th{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.hytable tbody th{font-weight:400}
+.hytable tbody th b{font-family:var(--f-num);font-size:1.1rem;display:block}
+.hy-rec{display:block;font-size:.8rem;color:var(--muted);min-width:8em;max-width:13em;line-height:1.3}
+.hy-cell{white-space:nowrap}
+.hytable .hy-in{width:5.4em;font-size:1rem;padding:6px 8px}
+.hy-mark{font-weight:800;margin-left:4px}
+.hy-mark.ok{color:var(--good)} .hy-mark.no{color:var(--bad)}
+.hy-act .btn{padding:4px 9px;font-size:.82rem;display:block;width:100%;margin:2px 0}
+#hyGraph{width:100%;height:auto;display:block}
+.gridl{stroke:var(--line);stroke-width:1}
+.axis{fill:none;stroke:var(--ink);stroke-width:1.5}
+.gdot{fill:var(--accent);stroke:var(--surface);stroke-width:1.5}
 .calcbox{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 .calcbox > .btn{align-self:flex-start}
 .calc-keys button.use{grid-column:span 4;font-family:var(--f-body);font-size:1rem;color:var(--accent);border-color:var(--accent)}
@@ -280,6 +322,11 @@ details li{margin-block:4px}
         <button id="sMix" aria-pressed="false" data-t="viewMix">Mixed</button>
       </div>
       <button class="navmode test" id="mStackTest" aria-pressed="false" data-t="stackTest">Layer test</button>
+    </nav>
+    <nav class="navsec" id="secHydro" aria-labelledby="secHydroLbl">
+      <span class="navlbl" id="secHydroLbl" data-t="secHydro">Hydrometer lab</span>
+      <button class="navmode" id="mHydro" aria-pressed="false" data-t="hydroLab">Lab</button>
+      <button class="navmode test" id="mHydroTest" aria-pressed="false" data-t="hydroTest">Lab test</button>
     </nav>
     <div class="stats" aria-live="polite">
       <div class="stat" id="stScore"><span data-t="score">Score</span><b id="score">0</b></div>
@@ -463,6 +510,48 @@ details li{margin-block:4px}
       <svg id="stackCol" viewBox="0 0 240 430" role="img" aria-label="Column"></svg>
     </div>
   </section>
+
+  <!-- HYDROMETER LAB: ten 250 mL cylinders, read the hydrometer, fill in the table -->
+  <section class="hygrid" id="hydroView" hidden>
+    <div class="card">
+      <p class="problem" data-t="hydroTitle">Hydrometer lab</p>
+      <p id="hyIntro" style="margin:0"></p>
+      <div class="hycyls" id="hyCyls"></div>
+      <div class="hystation">
+        <p class="hy-st-lbl" id="hyStationLbl" data-t="pickCyl">Tap a cylinder to drop the hydrometer in.</p>
+        <div class="hy-st-row">
+          <svg id="hyOverview" viewBox="0 0 160 560" role="img" aria-label="Graduated cylinder with hydrometer"></svg>
+          <div class="hy-close-wrap">
+            <span class="navlbl" data-t="closeUp">Close-up at the waterline</span>
+            <svg id="hyClose" viewBox="0 0 300 300" role="img" aria-label="Hydrometer scale at the waterline"></svg>
+            <span class="waitnote" data-t="readHere">Read the number at the waterline.</span>
+          </div>
+        </div>
+      </div>
+      <div id="eqSlotHydro"></div>
+      <div id="calcSlotHydro"></div>
+    </div>
+    <div class="card">
+      <div class="hy-table-wrap">
+        <table class="hytable">
+          <thead><tr><th id="hyColCyl">Cylinder</th><th id="hyColSG">Hydrometer reading (S.G.)</th><th id="hyColPpt">Salinity (ppt)</th><th id="hyActHead"></th></tr></thead>
+          <tbody id="hyBody"></tbody>
+        </table>
+      </div>
+      <p class="bmsg" id="hyMsg" aria-live="polite"></p>
+      <div class="row">
+        <button class="btn primary" id="hySubmit" type="button" data-t="submit" hidden>Submit</button>
+        <button class="btn" id="hyCopy" type="button" data-t="copyBtn">Copy table</button>
+        <button class="btn" id="hyNew" type="button" data-t="newLab">New lab</button>
+      </div>
+      <p class="waitnote" id="hyCopyMsg" aria-live="polite"></p>
+      <textarea id="hyCopyBox" class="inp" rows="6" hidden style="width:100%;font-size:.85rem" aria-label="Table text"></textarea>
+      <div>
+        <strong data-t="graphTitle">Density vs. salinity (from your table)</strong>
+        <svg id="hyGraph" viewBox="0 0 420 262" role="img" aria-label="Graph of specific gravity against salinity"></svg>
+      </div>
+    </div>
+  </section>
 </div>
 
 <!-- Green / red feedback pop-up (all modes) -->
@@ -555,7 +644,8 @@ const T = {
     about:[
       "1 mL of water has a mass of about 1 g, so grams of salt per 1000 mL is close to parts per thousand (ppt). Real ocean salinity is measured per kilogram of seawater, so the match is close, not exact.",
       "Average ocean salinity is about 35 ppt (NOAA).",
-      "Table salt (NaCl) dissolves up to about 36 g per 100 g of water at 25 °C (CRC Handbook), so about 360 g per 1000 mL."
+      "Table salt (NaCl) dissolves up to about 36 g per 100 g of water at 25 °C (CRC Handbook), so about 360 g per 1000 mL.",
+      "Hydrometer readings use the UNESCO (1981) seawater density equation at 20 °C (S.G. compared with pure water at 20 °C), rounded to the nearest 0.002 mark. The equation is official for 2–42 ppt; saltier readings are a close estimate."
     ]
   },
   es:{
@@ -604,7 +694,8 @@ const T = {
     about:[
       "1 mL de agua tiene una masa de aproximadamente 1 g, así que los gramos de sal por 1000 mL son casi iguales a partes por mil. La salinidad real del océano se mide por kilogramo de agua de mar, así que es muy parecido, no exacto.",
       "La salinidad promedio del océano es de unas 35 partes por mil (NOAA).",
-      "La sal de mesa (NaCl) se disuelve hasta unos 36 g por cada 100 g de agua a 25 °C (CRC Handbook), o sea unos 360 g por 1000 mL."
+      "La sal de mesa (NaCl) se disuelve hasta unos 36 g por cada 100 g de agua a 25 °C (CRC Handbook), o sea unos 360 g por 1000 mL.",
+      "Las lecturas del hidrómetro usan la ecuación de densidad del agua de mar de la UNESCO (1981) a 20 °C (comparada con agua pura a 20 °C), redondeadas a la marca de 0.002 más cercana. La ecuación es oficial de 2 a 42 ppt; para agua más salada es una buena estimación."
     ]
   },
   vi:{
@@ -653,7 +744,8 @@ const T = {
     about:[
       "1 mL nước nặng khoảng 1 g, nên số gam muối trong 1000 mL gần bằng phần nghìn (‰). Độ mặn thật của đại dương được đo trên mỗi kilôgam nước biển, nên con số này gần đúng, không chính xác hoàn toàn.",
       "Độ mặn trung bình của đại dương khoảng 35 phần nghìn (NOAA).",
-      "Muối ăn (NaCl) hòa tan tối đa khoảng 36 g trong 100 g nước ở 25 °C (CRC Handbook), tức khoảng 360 g trong 1000 mL."
+      "Muối ăn (NaCl) hòa tan tối đa khoảng 36 g trong 100 g nước ở 25 °C (CRC Handbook), tức khoảng 360 g trong 1000 mL.",
+      "Số đọc tỷ trọng kế dùng phương trình tỷ trọng nước biển UNESCO (1981) ở 20 °C (so với nước tinh khiết ở 20 °C), làm tròn đến vạch 0.002 gần nhất. Phương trình chính thức cho 2–42 ppt; nước mặn hơn là ước tính gần đúng."
     ]
   }
 };
@@ -1237,10 +1329,10 @@ async function autoBuild(){
 // Layer stack is always "find the salinity".
 function syncEq(){
   // Timed test: no clue about which one to use — both look the same.
-  const test = S.mode === "timed" || S.mode === "stacktest";
+  const test = S.mode === "timed" || S.mode === "stacktest" || S.mode === "hydrotest";
   $("eqBox").classList.toggle("nocap", test);   // no "Find the salinity / salt" labels in tests
   if (test){ $("eqConc").className = "eq"; $("eqSalt").className = "eq"; return; }
-  const kind = S.mode === "stack" ? "conc" : (S.prob ? S.prob.kind : "conc");
+  const kind = S.mode === "stack" || S.mode === "hydro" ? "conc" : (S.prob ? S.prob.kind : "conc");
   $("eqConc").className = "eq " + (kind === "conc" ? "on" : "off");
   $("eqSalt").className = "eq " + (kind === "salt" ? "on" : "off");
 }
@@ -1454,7 +1546,7 @@ function updateStats(pop){
   $("streak").textContent = S.streak;
   $("level").textContent = S.level;
   $("best").textContent = S.best;
-  if (pop){ const s = $("stScore"); s.classList.remove("pop"); void s.offsetWidth; s.classList.add("pop"); }
+  if (pop){ const s = $("stScore"); s.classList.remove("bump"); void s.offsetWidth; s.classList.add("bump"); }
 }
 
 // ---------- Modes ----------
@@ -1467,15 +1559,18 @@ function setMode(mode, mental = false){
   $("mTimed").setAttribute("aria-pressed", mode === "timed");
   $("mStack").setAttribute("aria-pressed", mode === "stack" && !S.mental);
   $("mStackTest").setAttribute("aria-pressed", mode === "stacktest");
+  $("mHydro").setAttribute("aria-pressed", mode === "hydro");
+  $("mHydroTest").setAttribute("aria-pressed", mode === "hydrotest");
   clearInterval(S.timerId); clearInterval(S.stTimer); hidePop();
   // Layer stack and Layer test share their own screen
   const stack = mode === "stack" || mode === "stacktest";
-  $("mainGrid").hidden = stack; $("stackView").hidden = !stack;
+  const hydro = mode === "hydro" || mode === "hydrotest";
+  $("mainGrid").hidden = stack || hydro; $("stackView").hidden = !stack; $("hydroView").hidden = !hydro;
   syncToolRow();   // problem-type switch: Practice only · picture/word switch: Practice + Layer stack
   // the same calculator follows the student between screens
-  $(stack ? "calcSlotStack" : "calcSlotMain").appendChild($("calcBox"));
-  $(stack ? "eqSlotStack" : "eqSlotMain").appendChild($("eqBox"));
-  $("calcUse").hidden = stack;          // "Put in answer box" only where there is an answer box
+  $(hydro ? "calcSlotHydro" : stack ? "calcSlotStack" : "calcSlotMain").appendChild($("calcBox"));
+  $(hydro ? "eqSlotHydro" : stack ? "eqSlotStack" : "eqSlotMain").appendChild($("eqBox"));
+  $("calcUse").hidden = stack || hydro; // "Put in answer box" only where there is one answer box
   $("calcBox").hidden = S.mental;       // no calculator in mental math
   $("mentalNote").hidden = !S.mental;
   $("overlay").hidden = true;
@@ -1495,6 +1590,7 @@ function setMode(mode, mental = false){
   }
   updateStats(false);
   if (stack){ S.run++; S.phase = "idle"; syncEq(); newStack(); return; }
+  if (hydro){ S.run++; S.phase = "idle"; syncEq(); newHydro(); return; }
   newProblem();
 }
 function setType(type){
@@ -1538,6 +1634,7 @@ function setLang(l){
   }
   if (typeof calcLabels === "function"){ calcLabels(); if (CALC.justDone && !isFinite(Number(CALC.expr || "x"))) calcRender(t().calcErr); }
   if (isStackMode() && ST.set.length) relabelTracker();
+  if (isHydroMode() && HY.cyls.length){ relabelHydro(); if (HY.sel < 0) setHydroSG(null); }
   if (isStackMode() && ST.set.length){ renderStackText(); syncStack(); if (!ST.settled) S.lastSay = stackSay(); }
   try { localStorage.setItem("ssu-lang", l); } catch(e){}
 }
@@ -1669,6 +1766,7 @@ function syncToolRow(){
   const m = S.mode;
   $("secSal").classList.toggle("on", m === "practice" || m === "timed");
   $("secStack").classList.toggle("on", m === "stack" || m === "stacktest");
+  $("secHydro").classList.toggle("on", m === "hydro" || m === "hydrotest");
   $("typeSeg").classList.toggle("dim", m !== "practice");
   $("viewSeg").classList.toggle("dim", m !== "practice");
   $("viewSeg2").classList.toggle("dim", m !== "stack");
@@ -1699,6 +1797,23 @@ Object.assign(T.en, {
   eqGSalt:"g of salt", eq1000:"1000 mL H₂O", eqSaltIn:"# of mL H₂O the salt is in", eqSalinity:"Salinity", eqYouHave:"# of mL of H₂O you have",
   calcName:"Calculator", calcErr:"Error", calcUse:"Put in answer box", calcKeys:{divide:"divide",times:"times",minus:"minus",plus:"plus",equals:"equals",del:"delete",clear:"clear"},
   revealBtn:"Show me the answer", shown:"Here's the answer.", mental:"Mental math practice", mentalNote:"Mental math: easy whole numbers, no calculator. Do it in your head!",
+  secHydro:"Hydrometer lab", hydroLab:"Lab", hydroTest:"Lab test", hydroTitle:"Hydrometer lab",
+  hydroIntro:"Each graduated cylinder holds 250 mL of sea-salt water. Its label tells how the solution was made. Tap a cylinder to float the hydrometer in it, read the number at the waterline, and fill in the table.",
+  hydroTestIntro:"Lab test: read all 10 cylinders and calculate each salinity. Each cylinder is worth 2 points (reading + salinity). Press Submit when you are done.",
+  cylLabel:(n)=>`Cylinder ${n}`, recipeCyl:(g,v)=>`${g} g sea salt in ${v} mL water`,
+  recipeBatch:(g,v)=>`${g} g sea salt in ${v} mL water. 250 mL of it was poured into the cylinder.`,
+  recipeBatchShort:(g,v)=>`${g} g in ${v} mL (250 mL poured in)`,
+  pickCyl:"Tap a cylinder to drop the hydrometer in.", closeUp:"Close-up at the waterline", readHere:"Read the number at the waterline.",
+  colCyl:"Cylinder", colRecipe:"How it was made", colSG:"Hydrometer reading (S.G.)", colPpt:"Salinity (ppt)",
+  showRow:"Show answer", newLab:"New lab", copyBtn:"Copy table",
+  copied:"Copied! Paste it into Google Docs or Sheets.", copyFail:"Copying is blocked here. The table text is selected below: press Ctrl+C (or ⌘+C) to copy it.",
+  graphTitle:"Density vs. salinity (from your table)", graphX:"Salinity (ppt)", graphY:"Specific gravity",
+  graphLook:"Look at your graph: saltier water has a higher specific gravity (it is denser).",
+  rowShown:(n,sg,p,g,v)=>`Cylinder ${n}: the hydrometer reads ${sg}. Salinity = ${g} g ÷ ${v} mL × 1000 = ${p} ppt.`,
+  labDone:"Lab complete! Every row is right.", labDoneShown:(n)=>`Lab complete. You used Show answer on ${n} row${n === 1 ? "" : "s"}.`,
+  blankWarn:"Some boxes are empty. Press Submit again to turn it in anyway.",
+  testPerfect:"Perfect lab! 20 out of 20 points.", testScore:(c)=>`${c} out of 20 points.`,
+  partSG:(y,r)=>`reading ${y}, should be ${r}`, partPpt:(y,r)=>`salinity ${y}, should be ${r} ppt`,
   secSal:"Salinity problems", secStack:"Layer stacking", stackTest:"Layer test", trackTitle:"Salinity tracker", trackHelp:"Work out each salinity and write it here.",
   submit:"Submit", needAllTest:"Fill in all 3 salinities and pour all 3 layers, then press Submit.",
   testIntro:"Test: find each salinity, write it in the tracker, then pour the layers in order. You have 120 seconds.",
@@ -1729,6 +1844,23 @@ Object.assign(T.es, {
   eqGSalt:"g de sal", eq1000:"1000 mL H₂O", eqSaltIn:"# de mL H₂O donde está la sal", eqSalinity:"Salinidad", eqYouHave:"# de mL de H₂O que tienes",
   calcName:"Calculadora", calcErr:"Error", calcUse:"Poner en la respuesta", calcKeys:{divide:"dividir",times:"por",minus:"menos",plus:"más",equals:"igual",del:"borrar",clear:"limpiar"},
   revealBtn:"Muéstrame la respuesta", shown:"Aquí está la respuesta.", mental:"Práctica de cálculo mental", mentalNote:"Cálculo mental: números enteros fáciles, sin calculadora. ¡Hazlo en tu cabeza!",
+  secHydro:"Laboratorio de hidrómetro", hydroLab:"Laboratorio", hydroTest:"Prueba de laboratorio", hydroTitle:"Laboratorio de hidrómetro",
+  hydroIntro:"Cada probeta tiene 250 mL de agua con sal marina. Su etiqueta dice cómo se preparó la solución. Toca una probeta para meter el hidrómetro, lee el número en la línea del agua y completa la tabla.",
+  hydroTestIntro:"Prueba: lee las 10 probetas y calcula cada salinidad. Cada probeta vale 2 puntos (lectura + salinidad). Presiona Entregar cuando termines.",
+  cylLabel:(n)=>`Probeta ${n}`, recipeCyl:(g,v)=>`${g} g de sal marina en ${v} mL de agua`,
+  recipeBatch:(g,v)=>`${g} g de sal marina en ${v} mL de agua. Se vertieron 250 mL en la probeta.`,
+  recipeBatchShort:(g,v)=>`${g} g en ${v} mL (se vertieron 250 mL)`,
+  pickCyl:"Toca una probeta para meter el hidrómetro.", closeUp:"Vista de cerca en la línea del agua", readHere:"Lee el número en la línea del agua.",
+  colCyl:"Probeta", colRecipe:"Cómo se preparó", colSG:"Lectura del hidrómetro (G.E.)", colPpt:"Salinidad (ppt)",
+  showRow:"Ver respuesta", newLab:"Nuevo laboratorio", copyBtn:"Copiar tabla",
+  copied:"¡Copiada! Pégala en Google Docs o Sheets.", copyFail:"Aquí no se puede copiar automáticamente. El texto de la tabla está seleccionado abajo: presiona Ctrl+C (o ⌘+C).",
+  graphTitle:"Densidad vs. salinidad (de tu tabla)", graphX:"Salinidad (ppt)", graphY:"Gravedad específica",
+  graphLook:"Mira tu gráfica: el agua más salada tiene mayor gravedad específica (es más densa).",
+  rowShown:(n,sg,p,g,v)=>`Probeta ${n}: el hidrómetro marca ${sg}. Salinidad = ${g} g ÷ ${v} mL × 1000 = ${p} ppt.`,
+  labDone:"¡Laboratorio completo! Todas las filas están bien.", labDoneShown:(n)=>`Laboratorio completo. Usaste Ver respuesta en ${n} fila${n === 1 ? "" : "s"}.`,
+  blankWarn:"Hay casillas vacías. Presiona Entregar otra vez para entregarlo así.",
+  testPerfect:"¡Laboratorio perfecto! 20 de 20 puntos.", testScore:(c)=>`${c} de 20 puntos.`,
+  partSG:(y,r)=>`lectura ${y}, debe ser ${r}`, partPpt:(y,r)=>`salinidad ${y}, debe ser ${r} ppt`,
   secSal:"Problemas de salinidad", secStack:"Capas de agua salada", stackTest:"Prueba de capas", trackTitle:"Registro de salinidad", trackHelp:"Calcula cada salinidad y escríbela aquí.",
   submit:"Entregar", needAllTest:"Escribe las 3 salinidades y vierte las 3 capas; luego presiona Entregar.",
   testIntro:"Prueba: encuentra cada salinidad, escríbela en el registro y vierte las capas en orden. Tienes 120 segundos.",
@@ -1759,6 +1891,23 @@ Object.assign(T.vi, {
   eqGSalt:"g muối", eq1000:"1000 mL H₂O", eqSaltIn:"số mL H₂O chứa muối", eqSalinity:"Độ mặn", eqYouHave:"số mL H₂O bạn có",
   calcName:"Máy tính", calcErr:"Lỗi", calcUse:"Đưa vào ô trả lời", calcKeys:{divide:"chia",times:"nhân",minus:"trừ",plus:"cộng",equals:"bằng",del:"xóa",clear:"xóa hết"},
   revealBtn:"Cho tôi xem đáp án", shown:"Đây là đáp án.", mental:"Luyện tính nhẩm", mentalNote:"Tính nhẩm: số nguyên dễ, không dùng máy tính. Hãy tính trong đầu!",
+  secHydro:"Thí nghiệm tỷ trọng kế", hydroLab:"Thí nghiệm", hydroTest:"Kiểm tra thí nghiệm", hydroTitle:"Thí nghiệm tỷ trọng kế",
+  hydroIntro:"Mỗi ống đong chứa 250 mL nước muối biển. Nhãn cho biết dung dịch được pha thế nào. Chạm vào một ống để thả tỷ trọng kế vào, đọc số ở mặt nước, rồi điền vào bảng.",
+  hydroTestIntro:"Kiểm tra: đọc cả 10 ống và tính độ mặn của từng ống. Mỗi ống được 2 điểm (số đọc + độ mặn). Bấm Nộp bài khi xong.",
+  cylLabel:(n)=>`Ống ${n}`, recipeCyl:(g,v)=>`${g} g muối biển trong ${v} mL nước`,
+  recipeBatch:(g,v)=>`${g} g muối biển trong ${v} mL nước. Đã rót 250 mL vào ống đong.`,
+  recipeBatchShort:(g,v)=>`${g} g trong ${v} mL (rót 250 mL)`,
+  pickCyl:"Chạm vào một ống để thả tỷ trọng kế vào.", closeUp:"Phóng to ở mặt nước", readHere:"Đọc số ở mặt nước.",
+  colCyl:"Ống", colRecipe:"Cách pha", colSG:"Số đọc tỷ trọng kế (tỷ trọng)", colPpt:"Độ mặn (ppt)",
+  showRow:"Xem đáp án", newLab:"Thí nghiệm mới", copyBtn:"Sao chép bảng",
+  copied:"Đã sao chép! Dán vào Google Docs hoặc Sheets.", copyFail:"Không thể tự sao chép ở đây. Nội dung bảng đã được chọn bên dưới: bấm Ctrl+C (hoặc ⌘+C).",
+  graphTitle:"Tỷ trọng theo độ mặn (từ bảng của bạn)", graphX:"Độ mặn (ppt)", graphY:"Tỷ trọng",
+  graphLook:"Xem đồ thị: nước mặn hơn có tỷ trọng cao hơn (đặc hơn).",
+  rowShown:(n,sg,p,g,v)=>`Ống ${n}: tỷ trọng kế chỉ ${sg}. Độ mặn = ${g} g ÷ ${v} mL × 1000 = ${p} ppt.`,
+  labDone:"Hoàn thành! Mọi hàng đều đúng.", labDoneShown:(n)=>`Hoàn thành. Bạn đã dùng Xem đáp án cho ${n} hàng.`,
+  blankWarn:"Còn ô trống. Bấm Nộp bài lần nữa để nộp luôn.",
+  testPerfect:"Hoàn hảo! 20 trên 20 điểm.", testScore:(c)=>`${c} trên 20 điểm.`,
+  partSG:(y,r)=>`số đọc ${y}, đúng là ${r}`, partPpt:(y,r)=>`độ mặn ${y}, đúng là ${r} ppt`,
   secSal:"Bài toán độ mặn", secStack:"Xếp lớp nước muối", stackTest:"Kiểm tra xếp lớp", trackTitle:"Bảng ghi độ mặn", trackHelp:"Tính độ mặn của từng dung dịch và ghi vào đây.",
   submit:"Nộp bài", needAllTest:"Hãy ghi cả 3 độ mặn và rót cả 3 lớp, rồi bấm Nộp bài.",
   testIntro:"Kiểm tra: tìm độ mặn của từng dung dịch, ghi vào bảng, rồi rót các lớp theo đúng thứ tự. Bạn có 120 giây.",
@@ -1795,8 +1944,9 @@ const layerY = i => COL.BOT - (i + 1) * COL.LH;   // i = 0 is the bottom
 // that "most salt" is NOT always "saltiest" — students have to compute ppt.
 function makeStackSet(){
   const pool = [3,5,8,10,12,15,18,20,25,30,35,40,45,50,60,75,90,120];
-  // mental math: only volumes with easy factors, and whole grams (checked below)
-  const vols = S.mental ? [100,200,250,500,2000,4000,5000] : [100,125,200,250,400,500,750,1250,1500,2000,2500,4000];
+  // Mental math practice AND the Layer test: only volumes with easy factors, and whole grams (checked below)
+  const easy = S.mental || S.mode === "stacktest";
+  const vols = easy ? [100,200,250,500,2000,4000,5000] : [100,125,200,250,400,500,750,1250,1500,2000,2500,4000];
   for (let tries = 0; tries < 2000; tries++){
     const ppts = [];
     while (ppts.length < N_LAYERS){ const p = pick(pool); if (!ppts.includes(p)) ppts.push(p); }
@@ -1807,7 +1957,7 @@ function makeStackSet(){
       const V = pick(vols.filter(v => !used.includes(v)));
       const g = p * V / 1000;
       if (Math.abs(g * 100 - Math.round(g * 100)) > 1e-6 || g < 0.5) break;
-      if (S.mental && !Number.isInteger(g)) break;
+      if (easy && !Number.isInteger(g)) break;
       used.push(V); sols.push({ g: Math.round(g * 100) / 100, V, ppt: p });
     }
     if (sols.length < N_LAYERS) continue;
@@ -2255,6 +2405,316 @@ function showTestPop(){
 }
 
 // =====================================================================
+// HYDROMETER LAB
+// Ten 250 mL graduated cylinders of sea-salt water. Each label says how the
+// solution was made. Students float a hydrometer in each one, read the
+// specific gravity (S.G.) at the waterline, and calculate the salinity.
+//
+// Where the readings come from: the UNESCO (1981) one-atmosphere equation of
+// state for seawater at 20 °C, divided by pure water at 20 °C (S.G. @ 20 °C).
+// It is official for 2–42 ppt; above that it is a close estimate. Readings
+// are rounded to the nearest 0.002 mark, the smallest mark on the scale.
+// =====================================================================
+const HY_T = 20;
+function seawaterDensity(S, t){
+  const rw = 999.842594 + 6.793952e-2*t - 9.095290e-3*t*t + 1.001685e-4*t**3 - 1.120083e-6*t**4 + 6.536332e-9*t**5;
+  const A = 8.24493e-1 - 4.0899e-3*t + 7.6438e-5*t*t - 8.2467e-7*t**3 + 5.3875e-9*t**4;
+  const B = -5.72466e-3 + 1.0227e-4*t - 1.6546e-6*t*t;
+  const C = 4.8314e-4;
+  return rw + A*S + B*S**1.5 + C*S*S;                // kg/m³
+}
+const specificGravity = S => seawaterDensity(S, HY_T) / seawaterDensity(0, HY_T);
+const toTick = sg => Math.round((sg - 1) / 0.002) * 0.002 + 1;   // nearest 0.002 mark
+const fmtSG = sg => sg.toFixed(3);
+
+const HY = { cyls: [], sel: -1, shown: new Set(), scored: new Set(), sgNow: 1, submitArmed: false, run: 0 };
+const isHydroMode = () => S.mode === "hydro" || S.mode === "hydrotest";
+
+// Ten different salinities (0–75 ppt) with different readings. About 4 of the
+// recipes are made in a bigger batch and only 250 mL is poured into the cylinder.
+function makeHydroSet(){
+  const pool = [0,5,8,10,12,15,18,20,24,25,28,30,32,35,36,40,44,45,50,55,60,64,65,70,75];
+  for (let tries = 0; tries < 500; tries++){
+    const ppts = [...pool].sort(() => Math.random() - .5).slice(0, 10).sort((a, b) => a - b);
+    const reads = ppts.map(p => toTick(specificGravity(p)).toFixed(3));
+    if (new Set(reads).size < 10) continue;          // every cylinder reads differently
+    const cyls = ppts.map(p => {
+      const batch = p > 0 && Math.random() < 0.4;      // no "big batch" of plain fresh water
+      let V = 250;
+      if (batch){
+        const opts = [400, 500, 1000, 1200, 1500, 2000].filter(v => Number.isInteger(p * v / 10) );   // grams with ≤ 2 decimals
+        V = opts.length ? pick(opts) : 250;
+      }
+      const g = Math.round(p * V / 1000 * 100) / 100;
+      return { ppt: p, V, g, batch: V !== 250, sg: toTick(specificGravity(p)) };
+    }).sort(() => Math.random() - .5);
+    return cyls.map((c, i) => ({ ...c, n: i + 1 }));
+  }
+}
+
+// ---------- screen ----------
+function newHydro(){
+  S.run++; HY.run = S.run;
+  HY.cyls = makeHydroSet(); HY.sel = -1; HY.shown = new Set(); HY.scored = new Set();
+  HY.submitArmed = false; HY.done = false;
+  const test = S.mode === "hydrotest";
+  $("hyIntro").textContent = test ? t().hydroTestIntro : t().hydroIntro;
+  $("hySubmit").hidden = !test;
+  $("hyMsg").textContent = "";
+  buildHydroCyls(); buildHydroTable(); drawStation(); drawHydroGraph();
+  S.lastSay = $("hyIntro").textContent;
+}
+function recipeText(c, short){
+  const L = t();
+  if (!c.batch) return L.recipeCyl(fmt(c.g), fmt(c.V));
+  return short ? L.recipeBatchShort(fmt(c.g), fmt(c.V)) : L.recipeBatch(fmt(c.g), fmt(c.V));
+}
+// Row of 10 small cylinders (buttons)
+function buildHydroCyls(){
+  const box = $("hyCyls"); box.innerHTML = "";
+  HY.cyls.forEach((c, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "hycyl" + (i === HY.sel ? " sel" : ""); b.id = "hyc" + i;
+    b.innerHTML = `<svg viewBox="0 0 40 90" aria-hidden="true">
+        <rect x="11" y="22" width="18" height="60" class="hy-water"/>
+        <path d="M8 6 L11 9 L11 84 Q11 86 13 86 L27 86 Q29 86 29 84 L29 6" class="glass" style="stroke-width:2"/>
+        <path d="M5 87 L35 87" class="glass" style="stroke-width:3"/>
+      </svg>
+      <b>${c.n}</b><span>${recipeText(c, false)}</span>`;
+    b.setAttribute("aria-label", `${t().cylLabel(c.n)}: ${recipeText(c, false)}`);
+    b.addEventListener("click", () => selectCyl(i));
+    box.appendChild(b);
+  });
+}
+function selectCyl(i){
+  HY.sel = i;
+  [...$("hyCyls").children].forEach((b, k) => b.classList.toggle("sel", k === i));
+  const c = HY.cyls[i];
+  $("hyStationLbl").textContent = `${t().cylLabel(c.n)} · ${recipeText(c, false)}`;
+  S.lastSay = `${t().cylLabel(c.n)}. ${recipeText(c, false)}. ${t().readHere}`;
+  dropHydrometer(c.sg);
+}
+
+// ---------- reading station: overview + close-up ----------
+const OV = { surf: 150, scaleTop: 10, scaleLen: 280 };   // overview geometry (SVG units)
+function drawStation(){
+  // overview: the whole cylinder with the hydrometer floating in it
+  const ov = $("hyOverview"); ov.innerHTML = "";
+  el("rect", { x:42, y:OV.surf, width:76, height:540 - OV.surf, class:"hy-water" }, ov);
+  for (let k = 0; k <= 5; k++){                       // 0–250 mL marks
+    const y = 540 - k * (540 - OV.surf) / 5;
+    el("line", { x1:118, x2:108, y1:y, y2:y, class:"tick" }, ov);
+    if (k) text(124, y + 4, `${k * 50}`, "lbl", ov, "start");
+  }
+  text(124, OV.surf - 14, "mL", "lbl", ov, "start");
+  HY.ovG = el("g", {}, ov);                           // hydrometer (moves)
+  el("rect", { x:72, y:0, width:16, height:300, rx:3, class:"hy-stem" }, HY.ovG);
+  el("path", { d:"M66 300 Q66 292 72 290 L88 290 Q94 292 94 300 L96 380 Q96 404 80 406 Q64 404 64 380 Z", class:"hy-bulb" }, HY.ovG);
+  el("circle", { cx:80, cy:392, r:9, class:"hy-weight" }, HY.ovG);
+  for (let k = 0; k <= 30; k++){
+    const y = OV.scaleTop + k * OV.scaleLen / 30;
+    el("line", { x1:72, x2: k % 5 ? 78 : 84, y1:y, y2:y, class:"hy-tick" }, HY.ovG);
+  }
+  el("rect", { x:42, y:OV.surf, width:76, height:540 - OV.surf, class:"hy-water-front" }, ov);   // water in front (see-through)
+  el("path", { d:"M38 30 L42 34 L42 536 Q42 540 46 540 L114 540 Q118 540 118 536 L118 30", class:"glass" }, ov);
+  el("path", { d:"M28 546 L132 546", class:"glass", "stroke-width":5 }, ov);
+  HY.ovMark = el("rect", { x:50, width:60, height:0, class:"hy-zoombox" }, ov);
+  // close-up of the stem at the waterline
+  const cu = $("hyClose"); cu.innerHTML = "";
+  el("rect", { x:0, y:150, width:300, height:150, class:"hy-water" }, cu);
+  HY.cuG = el("g", {}, cu);
+  el("rect", { x:0, y:150, width:300, height:150, class:"hy-water-front" }, cu);
+  el("line", { x1:0, x2:300, y1:150, y2:150, class:"hy-waterline" }, cu);
+  HY.cuLbl = text(150, 290, "", "lbl", cu);
+  setHydroSG(HY.sel >= 0 ? HY.cyls[HY.sel].sg : null);
+}
+// Draw the hydrometer floating at a given S.G. (null = not in water yet)
+function setHydroSG(sg){
+  const out = sg === null;
+  const s = out ? 0.94 : sg;                          // out of the water: lifted high
+  HY.sgNow = s;
+  const y = OV.surf - (OV.scaleTop + (s - 1) / 0.06 * OV.scaleLen);
+  HY.ovG.setAttribute("transform", `translate(0 ${y})`);
+  HY.ovG.setAttribute("opacity", out ? 0 : 1);
+  HY.ovMark.setAttribute("y", OV.surf - 22); HY.ovMark.setAttribute("height", out ? 0 : 44);
+  // close-up: ticks every 0.002 (24 px apart) around the waterline at y = 150
+  const g = HY.cuG; g.innerHTML = "";
+  if (out){ HY.cuLbl.textContent = t().pickCyl; return; }
+  HY.cuLbl.textContent = "";
+  el("rect", { x:110, y:-10, width:80, height:320, class:"hy-stem" }, g);
+  const PX = 12000;                                   // px per 1.000 of S.G. (0.002 → 24 px)
+  for (let k = 0; k <= 30; k++){
+    const v = 1 + k * 0.002, yy = 150 + (v - s) * PX;
+    if (yy < -20 || yy > 320) continue;
+    const major = k % 5 === 0;
+    el("line", { x1:110, x2: major ? 158 : 138, y1:yy, y2:yy, class:"hy-tick" }, g);
+    text(major ? 104 : 196, yy + 5, major ? v.toFixed(3) : "." + v.toFixed(3).slice(2), major ? "hy-major" : "hy-minor", g, major ? "end" : "start");
+  }
+}
+// Drop the hydrometer in: it falls, bobs, and settles at the reading
+async function dropHydrometer(target){
+  const myRun = S.run, start = 0.985;
+  await tween(2200, e => {
+    if (S.run !== myRun) return;
+    const tt = e * 6;                                  // damped bobbing
+    const sg = target + (start - target) * Math.exp(-tt) * Math.cos(tt * 2.2);
+    setHydroSG(sg);
+  }, "lin");
+  if (S.run === myRun) setHydroSG(target);
+}
+
+// ---------- data table ----------
+function buildHydroTable(){
+  const L = t(), test = S.mode === "hydrotest";
+  const tb = $("hyBody"); tb.innerHTML = "";
+  HY.cyls.forEach((c, i) => {
+    const tr = document.createElement("tr"); tr.id = "hyr" + i;
+    tr.innerHTML = `<th scope="row"><b>${c.n}</b><span class="hy-rec">${recipeText(c, true)}</span></th>
+      <td class="hy-cell"><input class="inp hy-in" id="hsg${i}" type="number" step="0.001" inputmode="decimal" aria-label="${L.colSG} ${c.n}" placeholder="1.0__"><span class="hy-mark" id="hsgm${i}"></span></td>
+      <td class="hy-cell"><input class="inp hy-in" id="hpp${i}" type="number" step="any" inputmode="decimal" aria-label="${L.colPpt} ${c.n}"><span class="hy-mark" id="hppm${i}"></span></td>
+      <td class="hy-act" ${test ? "hidden" : ""}><button type="button" class="btn hy-chk" id="hck${i}">${L.check}</button>
+        <button type="button" class="btn hy-show" id="hsh${i}">${L.showRow}</button></td>`;
+    tb.appendChild(tr);
+    $("hck" + i).addEventListener("click", () => checkHydroRow(i));
+    $("hsh" + i).addEventListener("click", () => showHydroRow(i));
+    ["hsg", "hpp"].forEach(k => $(k + i).addEventListener("input", drawHydroGraph));
+  });
+  $("hyActHead").hidden = test;
+  relabelHydro();
+}
+function relabelHydro(){
+  const L = t();
+  $("hyColCyl").textContent = L.colCyl;
+  $("hyColSG").textContent = L.colSG; $("hyColPpt").textContent = L.colPpt;
+  HY.cyls.forEach((c, i) => {
+    const r = $("hyr" + i); if (!r) return;
+    r.querySelector(".hy-rec").textContent = recipeText(c, true);
+    $("hck" + i).textContent = L.check; $("hsh" + i).textContent = L.showRow;
+    $("hyc" + i).querySelector("span").textContent = recipeText(c, false);
+  });
+  if (HY.sel >= 0) $("hyStationLbl").textContent = `${L.cylLabel(HY.cyls[HY.sel].n)} · ${recipeText(HY.cyls[HY.sel], false)}`;
+  $("hyIntro").textContent = S.mode === "hydrotest" ? L.hydroTestIntro : L.hydroIntro;
+  drawHydroGraph();
+}
+const readNum = id => { const raw = $(id).value.trim().replace(",", "."); return raw === "" ? NaN : Number(raw); };
+const sgOk = (v, c) => isFinite(v) && Math.abs(v - c.sg) <= 0.0011;
+const pptOk = (v, c) => isFinite(v) && Math.abs(v - c.ppt) <= Math.max(0.051, c.ppt * 0.01);
+function mark(id, ok){ const m = $(id); m.textContent = ok ? "✓" : "✗"; m.className = "hy-mark " + (ok ? "ok" : "no"); }
+
+// Lab: check one row (+5 the first time both parts are right)
+function checkHydroRow(i){
+  if (S.mode !== "hydro" || HY.shown.has(i)) return;
+  const c = HY.cyls[i], a = readNum("hsg" + i), b = readNum("hpp" + i);
+  if (!isFinite(a) || !isFinite(b)){ $("hyMsg").textContent = t().needNum; return; }
+  $("hyMsg").textContent = "";
+  const okA = sgOk(a, c), okB = pptOk(b, c);
+  mark("hsgm" + i, okA); mark("hppm" + i, okB);
+  if (okA && okB && !HY.scored.has(i)){
+    HY.scored.add(i);
+    S.score += 5 + Math.min(S.streak, 10); S.streak++; S.correct++;
+    if (S.score > S.best){ S.best = S.score; try { localStorage.setItem("ssu-best", S.best); } catch(e){} }
+    updateStats(true);
+    $("hsg" + i).disabled = $("hpp" + i).disabled = true;
+    $("hck" + i).disabled = $("hsh" + i).disabled = true;
+  } else if (!(okA && okB)){ S.streak = 0; updateStats(false); }
+  hydroMaybeDone();
+}
+// Lab: show the answer for one row (0 points)
+function showHydroRow(i){
+  if (S.mode !== "hydro" || HY.scored.has(i)) return;
+  const c = HY.cyls[i];
+  HY.shown.add(i);
+  $("hsg" + i).value = fmtSG(c.sg); $("hpp" + i).value = fmt(c.ppt);
+  $("hsg" + i).disabled = $("hpp" + i).disabled = true;
+  $("hck" + i).disabled = $("hsh" + i).disabled = true;
+  ["hsgm", "hppm"].forEach(k => { const m = $(k + i); m.textContent = "•"; m.className = "hy-mark"; });
+  const L = t();
+  $("hyMsg").textContent = L.rowShown(c.n, fmtSG(c.sg), fmt(c.ppt), fmt(c.g), fmt(c.V));
+  drawHydroGraph();
+  hydroMaybeDone();
+}
+function hydroMaybeDone(){
+  drawHydroGraph();
+  if (HY.done || HY.scored.size + HY.shown.size < HY.cyls.length) return;
+  HY.done = true;
+  const L = t(), n = HY.shown.size;
+  showPop({ good: n === 0, info: n > 0, title: n === 0 ? L.labDone : L.labDoneShown(n),
+            lines: [L.graphLook], next: [L.newLab, newHydro], close: [L.popLook, () => {}] });
+}
+
+// Lab test: grade every cell, 1 point each (20 total)
+function submitHydro(){
+  if (S.mode !== "hydrotest" || HY.done) return;
+  const blanks = HY.cyls.some((c, i) => !isFinite(readNum("hsg" + i)) || !isFinite(readNum("hpp" + i)));
+  if (blanks && !HY.submitArmed){ HY.submitArmed = true; $("hyMsg").textContent = t().blankWarn; return; }
+  HY.done = true; $("hyMsg").textContent = "";
+  const L = t(), lines = [];
+  let pts = 0;
+  HY.cyls.forEach((c, i) => {
+    const a = readNum("hsg" + i), b = readNum("hpp" + i);
+    const okA = sgOk(a, c), okB = pptOk(b, c);
+    pts += okA + okB;
+    mark("hsgm" + i, okA); mark("hppm" + i, okB);
+    $("hsg" + i).disabled = $("hpp" + i).disabled = true;
+    const parts = [];
+    if (!okA) parts.push(L.partSG(isFinite(a) ? fmtSG(a) : L.blank, fmtSG(c.sg)));
+    if (!okB) parts.push(L.partPpt(isFinite(b) ? fmt(b) : L.blank, fmt(c.ppt)));
+    if (parts.length) lines.push({ text: `${L.cylLabel(c.n)}: ${parts.join("; ")}`, cls: "no" });
+    if (!okB) lines.push({ text: `   ${fmt(c.g)} g ÷ ${fmt(c.V)} mL × 1000 = ${fmt(c.ppt)} ppt`, cls: "pop-calc" });
+  });
+  S.attempts++; S.score += pts;
+  if (pts === 20){ S.streak++; S.correct++; } else S.streak = 0;
+  if (S.score > S.best){ S.best = S.score; try { localStorage.setItem("ssu-best", S.best); } catch(e){} }
+  updateStats(pts > 0);
+  drawHydroGraph();
+  showPop({ good: pts === 20, title: pts === 20 ? L.testPerfect : L.testScore(pts),
+            lines: pts === 20 ? [L.graphLook] : lines, next: [L.newLab, newHydro], close: [L.popLook, () => {}] });
+}
+
+// ---------- graph: S.G. vs salinity from the student's own table ----------
+function drawHydroGraph(){
+  const svg = $("hyGraph"); if (!svg) return;
+  svg.innerHTML = "";
+  const L = t();
+  const X0 = 56, X1 = 400, Y0 = 220, Y1 = 16;           // plot box
+  const xOf = p => X0 + (X1 - X0) * p / 80, yOf = sg => Y0 - (Y0 - Y1) * (sg - 1) / 0.06;
+  for (let p = 0; p <= 80; p += 10){
+    el("line", { x1:xOf(p), x2:xOf(p), y1:Y1, y2:Y0, class:"gridl" }, svg);
+    text(xOf(p), Y0 + 16, `${p}`, "lbl", svg);
+  }
+  for (let k = 0; k <= 6; k++){
+    const sg = 1 + k * 0.01;
+    el("line", { x1:X0, x2:X1, y1:yOf(sg), y2:yOf(sg), class:"gridl" }, svg);
+    text(X0 - 6, yOf(sg) + 4, sg.toFixed(3), "lbl", svg, "end");
+  }
+  el("path", { d:`M${X0} ${Y1} L${X0} ${Y0} L${X1} ${Y0}`, class:"axis" }, svg);
+  text((X0 + X1) / 2, Y0 + 34, L.graphX, "lbl-copy", svg);
+  const yl = text(14, (Y0 + Y1) / 2, L.graphY, "lbl-copy", svg); yl.setAttribute("transform", `rotate(-90 14 ${(Y0 + Y1) / 2})`);
+  HY.cyls.forEach((c, i) => {
+    const a = readNum("hsg" + i), b = readNum("hpp" + i);
+    if (!isFinite(a) || !isFinite(b) || b < 0 || b > 80 || a < 1 || a > 1.06) return;
+    el("circle", { cx:xOf(b), cy:yOf(a), r:6, class:"gdot" }, svg);
+    text(xOf(b) + 9, yOf(a) - 7, `${c.n}`, "lbl-copy", svg, "start");
+  });
+}
+
+// ---------- copy the table (paste into Docs / Sheets) ----------
+async function copyHydro(){
+  const L = t();
+  const rows = [[L.colCyl, L.colRecipe, L.colSG, L.colPpt].join("\t")];
+  HY.cyls.forEach((c, i) => rows.push([c.n, recipeText(c, true), $("hsg" + i).value, $("hpp" + i).value].join("\t")));
+  const txt = rows.join("\n");
+  try { await navigator.clipboard.writeText(txt); $("hyCopyMsg").textContent = L.copied; $("hyCopyBox").hidden = true; }
+  catch(e){                                   // clipboard blocked: show the text to copy by hand
+    const box = $("hyCopyBox"); box.hidden = false; box.value = txt; box.focus(); box.select();
+    $("hyCopyMsg").textContent = L.copyFail;
+  }
+}
+$("hySubmit").addEventListener("click", submitHydro);
+$("hyNew").addEventListener("click", newHydro);
+$("hyCopy").addEventListener("click", copyHydro);
+
+// =====================================================================
 // CALCULATOR (Layer stack). A small, safe calculator: no eval().
 // Handles + − × ÷ with the normal order (× ÷ before + −).
 // =====================================================================
@@ -2358,6 +2818,8 @@ $("mStackMental").addEventListener("click", () => setMode("stack", true));
 $("mTimed").addEventListener("click", () => setMode("timed"));
 $("mStack").addEventListener("click", () => setMode("stack"));
 $("mStackTest").addEventListener("click", () => setMode("stacktest"));
+$("mHydro").addEventListener("click", () => setMode("hydro"));
+$("mHydroTest").addEventListener("click", () => setMode("hydrotest"));
 $("vPic").addEventListener("click", () => setView("pic", "sal"));
 $("vWord").addEventListener("click", () => setView("word", "sal"));
 $("vMix").addEventListener("click", () => setView("mix", "sal"));
