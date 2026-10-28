@@ -228,6 +228,8 @@ button{cursor:pointer}
 .gridl{stroke:var(--line);stroke-width:1}
 .axis{fill:none;stroke:var(--ink);stroke-width:1.5}
 .gdot{fill:var(--accent);stroke:var(--surface);stroke-width:1.5}
+.hyproof{border:3px solid var(--good);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.hyproof img{width:100%;height:auto;border:1.5px solid var(--line);border-radius:8px;background:#fff}
 .calcbox{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 .calcbox > .btn{align-self:flex-start}
 .calc-keys button.use{grid-column:span 4;font-family:var(--f-body);font-size:1rem;color:var(--accent);border-color:var(--accent)}
@@ -546,6 +548,15 @@ details li{margin-block:4px}
       </div>
       <p class="waitnote" id="hyCopyMsg" aria-live="polite"></p>
       <textarea id="hyCopyBox" class="inp" rows="6" hidden style="width:100%;font-size:.85rem" aria-label="Table text"></textarea>
+      <!-- Lab test, 20/20 only: copy a picture of the results as proof -->
+      <div class="hyproof" id="hyProof" hidden>
+        <p class="pop-title" style="color:var(--good)" data-t="proofTitle">Perfect lab! Copy a picture of your results.</p>
+        <label for="hyName" data-t="nameLbl">Your name (goes on the picture)</label>
+        <input class="inp" id="hyName" type="text" autocomplete="name" style="width:100%;max-width:22em;font-family:var(--f-body)">
+        <div class="row"><button class="btn primary" id="hyPng" type="button" data-t="copyPng">Copy picture of my results</button></div>
+        <p class="waitnote" id="hyPngMsg" aria-live="polite"></p>
+        <img id="hyPngImg" alt="" hidden>
+      </div>
       <div>
         <strong data-t="graphTitle">Density vs. salinity (from your table)</strong>
         <svg id="hyGraph" viewBox="0 0 420 262" role="img" aria-label="Graph of specific gravity against salinity"></svg>
@@ -1797,6 +1808,12 @@ Object.assign(T.en, {
   eqGSalt:"g of salt", eq1000:"1000 mL H₂O", eqSaltIn:"# of mL H₂O the salt is in", eqSalinity:"Salinity", eqYouHave:"# of mL of H₂O you have",
   calcName:"Calculator", calcErr:"Error", calcUse:"Put in answer box", calcKeys:{divide:"divide",times:"times",minus:"minus",plus:"plus",equals:"equals",del:"delete",clear:"clear"},
   revealBtn:"Show me the answer", shown:"Here's the answer.", mental:"Mental math practice", mentalNote:"Mental math: easy whole numbers, no calculator. Do it in your head!",
+  proofTitle:"Perfect lab! Copy a picture of your results.", nameLbl:"Your name (goes on the picture)",
+  copyPng:"Copy picture of my results", getPicture:"Get my picture",
+  pngCopied:"Picture copied! Paste it into Google Classroom, Docs, or an email.",
+  pngFallback:"Copying is blocked here. Right-click the picture below (or press and hold on a tablet) and choose Copy image.",
+  imgTitle:"Hydrometer lab test: 20 / 20 correct", imgSG:"Reading (S.G.)", imgName:"Name", imgDate:"Date",
+  lockedNote:"Your answers are locked. Press New lab to try a new set of cylinders.",
   secHydro:"Hydrometer lab", hydroLab:"Lab", hydroTest:"Lab test", hydroTitle:"Hydrometer lab",
   hydroIntro:"Each graduated cylinder holds 250 mL of sea-salt water. Its label tells how the solution was made. Tap a cylinder to float the hydrometer in it, read the number at the waterline, and fill in the table.",
   hydroTestIntro:"Lab test: read all 10 cylinders and calculate each salinity. Each cylinder is worth 2 points (reading + salinity). Press Submit when you are done.",
@@ -1844,6 +1861,12 @@ Object.assign(T.es, {
   eqGSalt:"g de sal", eq1000:"1000 mL H₂O", eqSaltIn:"# de mL H₂O donde está la sal", eqSalinity:"Salinidad", eqYouHave:"# de mL de H₂O que tienes",
   calcName:"Calculadora", calcErr:"Error", calcUse:"Poner en la respuesta", calcKeys:{divide:"dividir",times:"por",minus:"menos",plus:"más",equals:"igual",del:"borrar",clear:"limpiar"},
   revealBtn:"Muéstrame la respuesta", shown:"Aquí está la respuesta.", mental:"Práctica de cálculo mental", mentalNote:"Cálculo mental: números enteros fáciles, sin calculadora. ¡Hazlo en tu cabeza!",
+  proofTitle:"¡Laboratorio perfecto! Copia una imagen de tus resultados.", nameLbl:"Tu nombre (aparece en la imagen)",
+  copyPng:"Copiar imagen de mis resultados", getPicture:"Obtener mi imagen",
+  pngCopied:"¡Imagen copiada! Pégala en Google Classroom, Docs o un correo.",
+  pngFallback:"Aquí no se puede copiar automáticamente. Haz clic derecho en la imagen (o mantenla presionada en una tableta) y elige Copiar imagen.",
+  imgTitle:"Prueba de hidrómetro: 20 / 20 correctas", imgSG:"Lectura (G.E.)", imgName:"Nombre", imgDate:"Fecha",
+  lockedNote:"Tus respuestas están bloqueadas. Presiona Nuevo laboratorio para intentar con otras probetas.",
   secHydro:"Laboratorio de hidrómetro", hydroLab:"Laboratorio", hydroTest:"Prueba de laboratorio", hydroTitle:"Laboratorio de hidrómetro",
   hydroIntro:"Cada probeta tiene 250 mL de agua con sal marina. Su etiqueta dice cómo se preparó la solución. Toca una probeta para meter el hidrómetro, lee el número en la línea del agua y completa la tabla.",
   hydroTestIntro:"Prueba: lee las 10 probetas y calcula cada salinidad. Cada probeta vale 2 puntos (lectura + salinidad). Presiona Entregar cuando termines.",
@@ -1891,6 +1914,12 @@ Object.assign(T.vi, {
   eqGSalt:"g muối", eq1000:"1000 mL H₂O", eqSaltIn:"số mL H₂O chứa muối", eqSalinity:"Độ mặn", eqYouHave:"số mL H₂O bạn có",
   calcName:"Máy tính", calcErr:"Lỗi", calcUse:"Đưa vào ô trả lời", calcKeys:{divide:"chia",times:"nhân",minus:"trừ",plus:"cộng",equals:"bằng",del:"xóa",clear:"xóa hết"},
   revealBtn:"Cho tôi xem đáp án", shown:"Đây là đáp án.", mental:"Luyện tính nhẩm", mentalNote:"Tính nhẩm: số nguyên dễ, không dùng máy tính. Hãy tính trong đầu!",
+  proofTitle:"Hoàn hảo! Sao chép hình kết quả của bạn.", nameLbl:"Tên của bạn (sẽ có trên hình)",
+  copyPng:"Sao chép hình kết quả", getPicture:"Lấy hình của tôi",
+  pngCopied:"Đã sao chép hình! Dán vào Google Classroom, Docs hoặc email.",
+  pngFallback:"Không thể tự sao chép ở đây. Nhấp chuột phải vào hình bên dưới (hoặc nhấn giữ trên máy tính bảng) và chọn Sao chép hình ảnh.",
+  imgTitle:"Kiểm tra tỷ trọng kế: đúng 20 / 20", imgSG:"Số đọc", imgName:"Tên", imgDate:"Ngày",
+  lockedNote:"Câu trả lời đã bị khóa. Bấm Thí nghiệm mới để làm bộ ống mới.",
   secHydro:"Thí nghiệm tỷ trọng kế", hydroLab:"Thí nghiệm", hydroTest:"Kiểm tra thí nghiệm", hydroTitle:"Thí nghiệm tỷ trọng kế",
   hydroIntro:"Mỗi ống đong chứa 250 mL nước muối biển. Nhãn cho biết dung dịch được pha thế nào. Chạm vào một ống để thả tỷ trọng kế vào, đọc số ở mặt nước, rồi điền vào bảng.",
   hydroTestIntro:"Kiểm tra: đọc cả 10 ống và tính độ mặn của từng ống. Mỗi ống được 2 điểm (số đọc + độ mặn). Bấm Nộp bài khi xong.",
@@ -2459,7 +2488,11 @@ function newHydro(){
   HY.submitArmed = false; HY.done = false;
   const test = S.mode === "hydrotest";
   $("hyIntro").textContent = test ? t().hydroTestIntro : t().hydroIntro;
-  $("hySubmit").hidden = !test;
+  $("hySubmit").hidden = !test; $("hySubmit").disabled = false;
+  // Test: no skipping to a new set before submitting, and no plain-text copy (the picture is the proof)
+  $("hyNew").hidden = test; $("hyCopy").hidden = test;
+  $("hyProof").hidden = true; $("hyPngImg").hidden = true; $("hyPngImg").removeAttribute("src"); $("hyPngMsg").textContent = "";
+  $("hyCopyBox").hidden = true; $("hyCopyMsg").textContent = "";
   $("hyMsg").textContent = "";
   buildHydroCyls(); buildHydroTable(); drawStation(); drawHydroGraph();
   S.lastSay = $("hyIntro").textContent;
@@ -2667,8 +2700,76 @@ function submitHydro(){
   if (S.score > S.best){ S.best = S.score; try { localStorage.setItem("ssu-best", S.best); } catch(e){} }
   updateStats(pts > 0);
   drawHydroGraph();
-  showPop({ good: pts === 20, title: pts === 20 ? L.testPerfect : L.testScore(pts),
-            lines: pts === 20 ? [L.graphLook] : lines, next: [L.newLab, newHydro], close: [L.popLook, () => {}] });
+  // locked: no going back to fix answers
+  $("hySubmit").disabled = true; $("hyNew").hidden = false;
+  HY.perfect = pts === 20;
+  if (HY.perfect){
+    $("hyProof").hidden = false;
+    showPop({ good: true, title: L.testPerfect, lines: [L.graphLook],
+              next: [L.getPicture, () => { $("hyProof").scrollIntoView({ block:"center" }); $("hyName").focus(); }],
+              close: [L.newLab, newHydro] });
+  } else {
+    $("hyMsg").textContent = L.lockedNote;
+    showPop({ good: false, title: L.testScore(pts), lines: [...lines, { text: L.lockedNote, cls: "pop-note" }],
+              next: [L.newLab, newHydro], close: [L.popLook, () => {}] });
+  }
+}
+
+// ---------- proof picture (PNG) of a perfect Lab test ----------
+// Drawn on a canvas in fixed light colors so it looks the same in any theme.
+function drawProofCanvas(name){
+  const L = t(), W = 900, rowH = 40, top = 150, tableH = rowH * (HY.cyls.length + 1), gTop = top + tableH + 30, H = gTop + 330;
+  const cv = document.createElement("canvas"); cv.width = W * 2; cv.height = H * 2;   // 2× for sharp text
+  const c = cv.getContext("2d"); c.scale(2, 2);
+  const ink = "#10303b", muted = "#4f6a74", line = "#c3d5d9", good = "#1d7f47", accent = "#0c6f73";
+  const F = (w, sz) => `${w} ${sz}px "Atkinson Hyperlegible", Verdana, Arial, sans-serif`;
+  c.fillStyle = "#ffffff"; c.fillRect(0, 0, W, H);
+  c.fillStyle = good; c.fillRect(0, 0, W, 10);
+  c.fillStyle = ink; c.font = F(800, 30); c.fillText("✓ " + L.imgTitle, 30, 56);
+  c.font = F(400, 18); c.fillStyle = muted;
+  const when = new Date().toLocaleString(S.lang === "vi" ? "vi-VN" : S.lang === "es" ? "es-MX" : "en-US", { dateStyle:"medium", timeStyle:"short" });
+  c.fillText(`${L.imgName}: ${name || "—"}     ${L.imgDate}: ${when}`, 30, 90);
+  c.fillText("Salinity Scale-Up · " + L.hydroTitle, 30, 118);
+  // table
+  const cols = [30, 150, 560, 730];                 // Cylinder · How it was made · S.G. · ppt
+  c.font = F(700, 14); c.fillStyle = muted;
+  [L.colCyl, L.colRecipe, L.imgSG, L.colPpt].forEach((h, k) => c.fillText(h.toUpperCase(), cols[k], top));
+  c.strokeStyle = line; c.lineWidth = 1.5;
+  HY.cyls.forEach((cy, i) => {
+    const y = top + rowH * (i + 1);
+    c.beginPath(); c.moveTo(30, y - 26); c.lineTo(W - 30, y - 26); c.stroke();
+    c.fillStyle = ink; c.font = F(700, 18); c.fillText(String(cy.n), cols[0], y);
+    c.font = F(400, 15); c.fillText(recipeText(cy, true), cols[1], y);
+    c.font = F(700, 18); c.fillText(fmtSG(cy.sg), cols[2], y); c.fillText(fmt(cy.ppt) + " ppt", cols[3], y);
+    c.fillStyle = good; c.fillText("✓", cols[2] + 70, y); c.fillText("✓", cols[3] + 100, y);
+  });
+  // graph
+  const X0 = 110, X1 = W - 60, Y0 = gTop + 270, Y1 = gTop + 20;
+  const xOf = p => X0 + (X1 - X0) * p / 80, yOf = sg => Y0 - (Y0 - Y1) * (sg - 1) / 0.06;
+  c.fillStyle = ink; c.font = F(700, 16); c.fillText(L.graphTitle, 30, gTop);
+  c.strokeStyle = line; c.lineWidth = 1; c.font = F(400, 13); c.fillStyle = muted;
+  for (let p = 0; p <= 80; p += 10){ c.beginPath(); c.moveTo(xOf(p), Y1); c.lineTo(xOf(p), Y0); c.stroke(); c.fillText(String(p), xOf(p) - 6, Y0 + 18); }
+  for (let k = 0; k <= 6; k++){ const sg = 1 + k * 0.01; c.beginPath(); c.moveTo(X0, yOf(sg)); c.lineTo(X1, yOf(sg)); c.stroke(); c.fillText(sg.toFixed(3), X0 - 48, yOf(sg) + 4); }
+  c.strokeStyle = ink; c.lineWidth = 1.5; c.beginPath(); c.moveTo(X0, Y1); c.lineTo(X0, Y0); c.lineTo(X1, Y0); c.stroke();
+  c.fillText(L.graphX, (X0 + X1) / 2 - 40, Y0 + 40);
+  HY.cyls.forEach(cy => {
+    c.fillStyle = accent; c.beginPath(); c.arc(xOf(cy.ppt), yOf(cy.sg), 6, 0, 6.283); c.fill();
+    c.fillStyle = ink; c.font = F(700, 13); c.fillText(String(cy.n), xOf(cy.ppt) + 9, yOf(cy.sg) - 7);
+  });
+  return cv;
+}
+function copyProofPNG(){
+  if (S.mode !== "hydrotest" || !HY.perfect) return;   // only after 20 / 20
+  const L = t(), cv = drawProofCanvas($("hyName").value.trim());
+  const img = $("hyPngImg");
+  img.src = cv.toDataURL("image/png"); img.alt = L.imgTitle; img.hidden = false;   // always shown too
+  const blob = new Promise(res => cv.toBlob(res, "image/png"));
+  try {
+    // the ClipboardItem gets a promise so the copy still counts as part of the click
+    navigator.clipboard.write([new ClipboardItem({ "image/png": blob })])
+      .then(() => { $("hyPngMsg").textContent = L.pngCopied; })
+      .catch(() => { $("hyPngMsg").textContent = L.pngFallback; });
+  } catch(e){ $("hyPngMsg").textContent = L.pngFallback; }
 }
 
 // ---------- graph: S.G. vs salinity from the student's own table ----------
@@ -2713,6 +2814,7 @@ async function copyHydro(){
 $("hySubmit").addEventListener("click", submitHydro);
 $("hyNew").addEventListener("click", newHydro);
 $("hyCopy").addEventListener("click", copyHydro);
+$("hyPng").addEventListener("click", copyProofPNG);
 
 // =====================================================================
 // CALCULATOR (Layer stack). A small, safe calculator: no eval().
